@@ -361,6 +361,7 @@ int main(void) {
   halInit();
   /* This is needed to remap the USB pins PA11,PA12 onto the default PA9,PA10
    * so that the USB works. After halInit (which changes that register).
+   * This also means that USART1 can't be used, as it is on PA9,PA10.
    */
   SYSCFG->CFGR1 |= SYSCFG_CFGR1_PA11_PA12_RMP;
   chSysInit();
