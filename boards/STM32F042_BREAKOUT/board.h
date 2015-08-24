@@ -236,8 +236,8 @@
                                      PIN_OSPEED_40M(GPIOA_PIN6) |           \
                                      PIN_OSPEED_40M(GPIOA_PIN7) |           \
                                      PIN_OSPEED_40M(GPIOA_PIN8) |           \
-                                     PIN_OSPEED_2M(GPIOA_PIN9) |            \
-                                     PIN_OSPEED_2M(GPIOA_PIN10) |           \
+                                     PIN_OSPEED_40M(GPIOA_PIN9) |           \
+                                     PIN_OSPEED_40M(GPIOA_PIN10) |          \
                                      PIN_OSPEED_2M(GPIOA_USB_DM) |          \
                                      PIN_OSPEED_2M(GPIOA_USB_DP) |          \
                                      PIN_OSPEED_40M(GPIOA_SWDIO) |          \

@@ -15,8 +15,9 @@ openocd: all
 
 SERIAL_PORT = /dev/tty.usbserial-DJ005LMJ
 
-stm32flash: all
-	stm32flash -w $(BUILDDIR)/$(PROJECT).bin -v -R $(SERIAL_PORT)
+serialflash: all
+	#stm32flash -w $(BUILDDIR)/$(PROJECT).hex -v $(SERIAL_PORT)
+	stm32loader.py -evw -b 57600 $(BUILDDIR)/$(PROJECT).bin
 
 ### dfu-util
 
