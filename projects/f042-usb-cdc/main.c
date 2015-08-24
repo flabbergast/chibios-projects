@@ -340,9 +340,9 @@ static THD_FUNCTION(Thread1, arg) {
   chRegSetThreadName("blinker");
   while (true) {
     systime_t time = serusbcfg.usbp->state == USB_ACTIVE ? 250 : 500;
-    palClearPad(GPIOC, GPIOC_LED_RED);
+    palClearPad(GPIOA, GPIOA_LED_AMBER);
     chThdSleepMilliseconds(time);
-    palSetPad(GPIOC, GPIOC_LED_RED);
+    palSetPad(GPIOA, GPIOA_LED_AMBER);
     chThdSleepMilliseconds(time);
   }
 }
@@ -359,6 +359,10 @@ int main(void) {
    *   RTOS is active.
    */
   halInit();
+  /* This is needed to remap the USB pins PA11,PA12 onto the default PA9,PA10
+   * so that the USB works. After halInit (which changes that register).
+   */
+  SYSCFG->CFGR1 |= SYSCFG_CFGR1_PA11_PA12_RMP;
   chSysInit();
 
   /*
@@ -387,7 +391,7 @@ int main(void) {
    * sleeping in a loop and check the button state.
    */
   while (true) {
-    if ( (palReadPad(GPIOA, GPIOA_BUTTON) == PAL_HIGH) && (SDU1.config->usbp->state == USB_ACTIVE)) {
+    if ( (palReadPad(GPIOB, GPIOB_BUTTON) == PAL_HIGH) && (SDU1.config->usbp->state == USB_ACTIVE)) {
       //sdWrite(&SDU1, (uint8_t *)"hello world\r\n", 13);
       chprintf((BaseSequentialStream *)&SDU1, "Hello world\r\n");
       //chnWrite((BaseChannel *)&SDU1, (uint8_t *)"Hello, world\r\n", 14);
