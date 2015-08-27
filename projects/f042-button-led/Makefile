@@ -90,7 +90,7 @@ BOARD = STM32F042_BREAKOUT
 ROOTDIR = ../..
 
 # Imported source files and paths
-CHIBIOS = $(ROOTDIR)/ChibiOS_3.0.1
+CHIBIOS = $(ROOTDIR)/chibios
 # Startup files.
 include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/startup_$(shell echo $(MCU_SERIES) | tr '[:upper:]' '[:lower:]').mk
 # HAL-OSAL files (optional).
