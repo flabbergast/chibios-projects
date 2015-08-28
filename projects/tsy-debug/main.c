@@ -26,7 +26,11 @@
 #include "hal.h"
 
 #include "usb_hid_debug.h"
-#include "print.h"
+
+/*
+ * Teensy HID debug driver structure.
+ */
+HIDDebugDriver HIDD;
 
 /*
  * Button thread
@@ -49,10 +53,11 @@ static THD_FUNCTION(buttonThread, arg) {
       chSysLock();
       if(usbGetDriverStateI (&USBD1) == USB_ACTIVE) {
         chSysUnlock();
-        print("button state is ");
-        usb_debug_putchar('0'+wkup_cur_state);
-        usb_debug_putchar('\n');
-        usb_debug_flush_output();
+        chnWrite((BaseChannel *)&HIDD, (uint8_t *)"Hello, world!\n", 14);
+        // print("button state is ");
+        // usb_debug_putchar('0'+wkup_cur_state);
+        // usb_debug_putchar('\n');
+        //usb_debug_flush_output(&HIDD);
       }
       else
         chSysUnlock();
@@ -94,8 +99,10 @@ int main (void) {
   chThdSleepMilliseconds(400);
   palClearPad(GPIOC, GPIOC_LED_BLUE);
 
+  // Init the teensy HID debug driver object
+  hid_debug_init_start(&HIDD);
+
   // Init USB
-  init_usb_queues();
   init_usb_driver();
 
   chThdCreateStatic(waBlinkerThread, sizeof(waBlinkerThread), NORMALPRIO, blinkerThread, NULL);
