@@ -1,4 +1,14 @@
 /*
+ * (c) 2015 flabbergast <s3+flabbergast@sdfeu.org>
+ *
+ * Based on the work of Guillaume Duc, original licence below.
+ * The original license applies to the whole current file.
+ *
+ * Some code also based on the USB Serial implementation
+ * in ChibiOS 3.0.1, see the license in ChibiOS.
+ */
+
+/*
 
   Copyright (c) 2014 Guillaume Duc <guillaume@guiduc.org>
 
