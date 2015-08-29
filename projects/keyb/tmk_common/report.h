@@ -85,6 +85,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #   define KEYBOARD_REPORT_KEYS (NKRO_EPSIZE - 2)
 #   define KEYBOARD_REPORT_BITS (NKRO_EPSIZE - 1)
 
+#elif defined(_CHIBIOS_RT_) && defined(NKRO_ENABLE) // added by flabbergast
+#   define KEYBOARD_REPORT_SIZE NKRO_SIZE
+#   define KEYBOARD_REPORT_KEYS (NKRO_SIZE - 2)
+#   define KEYBOARD_REPORT_BITS (NKRO_SIZE - 1)
+
 #else
 #   define KEYBOARD_REPORT_SIZE 8
 #   define KEYBOARD_REPORT_KEYS 6

@@ -29,9 +29,11 @@
 #include "usb_keyboard.h"
 
 report_keyboard_t report = {
-  .mods = 0,
-  .reserved = 0,
-  {0, 0, 0, 0, 0, 0}
+#ifdef NKRO_ENABLE
+  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+#else
+  {0,0,0,0,0,0,0,0}
+#endif
 };
 
 /*
@@ -55,7 +57,15 @@ static THD_FUNCTION(buttonThread, arg) {
       chSysLock();
       if(usbGetDriverStateI (&USBD1) == USB_ACTIVE) {
         chSysUnlock();
-        report.keys[0] = (wkup_cur_state ? 0x10 : 0);
+#ifdef NKRO_ENABLE
+        if(wkup_cur_state) {
+          report.nkro.bits[2] |= 2; // 'n'
+        } else {
+          report.nkro.bits[2] &= 0b11111101;
+        }
+#else
+        report.keys[0] = (wkup_cur_state ? 0x10 : 0); // 'm'
+#endif
         send_keyboard(&report);
       }
       else

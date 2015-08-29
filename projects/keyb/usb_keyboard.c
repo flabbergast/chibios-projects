@@ -6,11 +6,16 @@
 uint8_t keyboard_idle = 0;
 uint8_t keyboard_protocol = 1;
 uint8_t keyboard_led_stats = 0;
+#ifdef NKRO_ENABLE
+bool keyboard_nkro = true;
+#endif
 
-report_keyboard_t keyboard_report_sent = { // this depends in KEYBOARD_REPORT_KEYS... / NKRO
-  .mods = 0,
-  .reserved = 0,
-  {0, 0, 0, 0, 0, 0}
+report_keyboard_t keyboard_report_sent = { // this declaration depends on KEYBOARD_REPORT_KEYS
+#ifdef NKRO_ENABLE
+  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+#else
+  {0,0,0,0,0,0,0,0}
+#endif
   };
 
 volatile uint16_t keyboard_idle_count = 0;
@@ -21,6 +26,15 @@ void kbd_in_cb(USBDriver* usbp, usbep_t ep) {
   (void)usbp;
   (void)ep;
 }
+
+#ifdef NKRO_ENABLE
+// nkro IN callback hander (a nkro report has made it IN)
+void nkro_in_cb(USBDriver* usbp, usbep_t ep) {
+  // STUB
+  (void)usbp;
+  (void)ep;
+}
+#endif
 
 // start-of-frame handler
 // i guess it would be better to re-implement using timers,
@@ -44,15 +58,6 @@ void kbd_sof_cb(USBDriver *usbp) {
   }
 }
 
-#ifdef NKRO_ENABLE
-// keyboard2 IN callback hander (a kbd2 report has made it IN)
-void kbd2_in_cb(USBDriver* usbp, usbep_t ep) {
-  // STUB
-  (void)usbp;
-  (void)ep;
-}
-#endif
-
 uint8_t keyboard_leds(void) {
   return keyboard_led_stats;
 }
@@ -69,9 +74,9 @@ void send_keyboard(report_keyboard_t *report) {
 
 #ifdef NKRO_ENABLE
   if(keyboard_nkro) {  // NKRO protocol
-    usbPrepareTransmit(&USB_DRIVER, KBD2_ENDPOINT, (uint8_t *)report, KBD2_SIZE);
+    usbPrepareTransmit(&USB_DRIVER, NKRO_ENDPOINT, (uint8_t *)report, NKRO_SIZE);
     osalSysLock();
-    usbStartTransmitI(&USB_DRIVER, KBD2_ENDPOINT);
+    usbStartTransmitI(&USB_DRIVER, NKRO_ENDPOINT);
     osalSysUnlock();
   } else
 #endif

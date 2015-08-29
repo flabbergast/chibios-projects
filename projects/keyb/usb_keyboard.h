@@ -6,8 +6,6 @@
 
 #include "usb_main.h"
 
-#include "tmk_common/report.h"
-
 /*------------------------------------------------------------------*
  * Keyboard descriptor setting
  *------------------------------------------------------------------*/
@@ -18,15 +16,19 @@
 
 // secondary keyboard
 #ifdef NKRO_ENABLE
-#define KBD2_INTERFACE    4
-#define KBD2_ENDPOINT     5
-#define KBD2_SIZE         16
-#define KBD2_REPORT_KEYS  (KBD2_SIZE - 1)
+#define NKRO_INTERFACE    4
+#define NKRO_ENDPOINT     5
+#define NKRO_SIZE         16
+#define NKRO_REPORT_KEYS  (NKRO_SIZE - 1)
 #endif
+
+// this defines report_keyboard_t and computes REPORT_SIZE defines
+#include "tmk_common/report.h"
 
 // these are set/read in usb_main, since that't where SETUP reqs are handled
 extern uint8_t keyboard_idle;
 extern uint8_t keyboard_protocol;
+extern bool keyboard_nkro;
 extern uint8_t keyboard_led_stats;
 
 extern report_keyboard_t keyboard_report_sent;
@@ -37,8 +39,8 @@ void kbd_in_cb(USBDriver *usbp, usbep_t ep);
 void kbd_sof_cb(USBDriver *usbp);
 
 #ifdef NKRO_ENABLE
-// keyboard2 IN callback hander
-void kbd2_in_cb(USBDriver* usbp, usbep_t ep);
+// nkro IN callback hander
+void nkro_in_cb(USBDriver* usbp, usbep_t ep);
 #endif
 
 void send_keyboard(report_keyboard_t *report);
