@@ -804,20 +804,24 @@ static bool usb_request_hook_cb(USBDriver * usbp) {
             switch(usbp->setup[4]) { // LSB(wIndex) (check MSB==0?)
               case KBD_INTERFACE:
                 usbSetupTransfer(usbp, (uint8_t *)&keyboard_report_sent, sizeof(keyboard_report_sent), NULL);
+                return TRUE;
                 break;
               // TODO: also got GET_REPORT for NKRO on linux
               default:
                 usbSetupTransfer(usbp, NULL, 0, NULL);
+                return TRUE;
                 break;  
             }
             break;
           case HID_GET_PROTOCOL:
             if((usbp->setup[4] == KBD_INTERFACE) && (usbp->setup[5]==0)) { // wIndex
               usbSetupTransfer(usbp, &keyboard_protocol, 1, NULL);
+              return TRUE;
             }
             break;
           case HID_GET_IDLE:
             usbSetupTransfer(usbp, &keyboard_idle, 1, NULL);
+            return TRUE;
             break;
         }
         break;
@@ -830,12 +834,10 @@ static bool usb_request_hook_cb(USBDriver * usbp) {
                 case NKRO_INTERFACE:
 #endif
                   // keyboard_led_stats = <read byte from next OUT report>
-                  // the ep0out_cb is hardcoded into the USB driver
-                  // but maybe this will work (without being notified of transfer)
-                  // usbPrepareReceive(usbp, 0, &keyboard_led_stats, 1);
-                  // osalSysLockFromISR();
-                  // (void) usbStartReceiveI(usbp, 0);
-                  // osalSysUnlockFromISR();
+                  // this sets the correct variables for _usb_ep0setup to continue and receive the byte
+                  // except we run into unhandled exception
+//                  usbSetupTransfer(usbp, &keyboard_led_stats, 1, NULL);
+//                  return TRUE;
                 break;
               }
             break;
@@ -846,9 +848,13 @@ static bool usb_request_hook_cb(USBDriver * usbp) {
               keyboard_nkro = !!keyboard_protocol;
 #endif
             }
+            usbSetupTransfer(usbp, NULL, 0, NULL);
+            return TRUE;
             break;
           case HID_SET_IDLE:
             keyboard_idle = usbp->setup[3]; // MSB(wValue)
+            usbSetupTransfer(usbp, NULL, 0, NULL);
+            return TRUE;
             break;
         }
         break;
