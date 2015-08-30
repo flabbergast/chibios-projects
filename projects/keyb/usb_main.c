@@ -803,6 +803,9 @@ static bool usb_request_hook_cb(USBDriver * usbp) {
           case HID_GET_REPORT:
             switch(usbp->setup[4]) { // LSB(wIndex) (check MSB==0?)
               case KBD_INTERFACE:
+#ifdef NKRO_ENABLE
+                case NKRO_INTERFACE:
+#endif
                 usbSetupTransfer(usbp, (uint8_t *)&keyboard_report_sent, sizeof(keyboard_report_sent), NULL);
                 return TRUE;
                 break;
@@ -837,8 +840,7 @@ static bool usb_request_hook_cb(USBDriver * usbp) {
                 case NKRO_INTERFACE:
 #endif
                   // keyboard_led_stats = <read byte from next OUT report>
-                  // this sets the correct variables for _usb_ep0setup to continue and receive the byte
-                  // except we run into unhandled exception
+                  // keyboard_led_stats needs be word (or dword), otherwise we get an exception on F0
                   usbSetupTransfer(usbp, (uint8_t*)&keyboard_led_stats, 1, NULL);
                   return TRUE;
                 break;
