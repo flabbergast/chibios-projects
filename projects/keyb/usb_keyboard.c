@@ -5,7 +5,7 @@
 
 uint8_t keyboard_idle = 0;
 uint8_t keyboard_protocol = 1;
-uint8_t keyboard_led_stats = 0;
+uint16_t keyboard_led_stats = 0;
 #ifdef NKRO_ENABLE
 bool keyboard_nkro = true;
 #endif
@@ -46,7 +46,6 @@ void kbd_sof_cb(USBDriver *usbp) {
   if(keyboard_idle) {
 #endif
     keyboard_idle_count++;
-    palWritePad(GPIOC, GPIOC_LED_RED, keyboard_led_stats & 0b10);
     if(keyboard_idle_count == 4*(uint16_t)keyboard_idle) {
       keyboard_idle_count = 0;
       // TODO: are we sure we want the KBD_ENDPOINT?

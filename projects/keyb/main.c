@@ -128,6 +128,8 @@ int main (void) {
    * Main loop
    */
   while(true) {
-    chThdSleepMilliseconds(1000);
+    chThdSleepMilliseconds(200);
+    // caps lock led status
+    palWritePad(GPIOC, GPIOC_LED_RED, ((keyboard_led_stats & 2) == 2));
   }
 }

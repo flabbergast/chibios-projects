@@ -29,7 +29,7 @@
 extern uint8_t keyboard_idle;
 extern uint8_t keyboard_protocol;
 extern bool keyboard_nkro;
-extern uint8_t keyboard_led_stats;
+extern uint16_t keyboard_led_stats;
 
 extern report_keyboard_t keyboard_report_sent;
 

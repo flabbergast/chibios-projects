@@ -830,14 +830,17 @@ static bool usb_request_hook_cb(USBDriver * usbp) {
           case HID_SET_REPORT:
               switch(usbp->setup[4]) { // LSB(wIndex) (check MSB==0 and wLength==1?)
                 case KBD_INTERFACE:
-#ifdef NKRO_ENABLE
+#ifdef NKRO_ENABLE  // well this doesn't actually work with NKRO enabled
+                    // because we get 2 SET_REPORTs (one for each interface)
+                    // and reading the next byte doesn't work properly
+                    // and fails with endpoint_busy problem.
                 case NKRO_INTERFACE:
 #endif
                   // keyboard_led_stats = <read byte from next OUT report>
                   // this sets the correct variables for _usb_ep0setup to continue and receive the byte
                   // except we run into unhandled exception
-//                  usbSetupTransfer(usbp, &keyboard_led_stats, 1, NULL);
-//                  return TRUE;
+                  usbSetupTransfer(usbp, (uint8_t*)&keyboard_led_stats, 1, NULL);
+                  return TRUE;
                 break;
               }
             break;
