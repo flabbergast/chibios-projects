@@ -1,4 +1,10 @@
 /*
+ * (c) 2015 flabbergast <s3+flabbergast@sdfeu.org>
+ * Based on ChibiOS 3.0.1 board definitions, license below.
+ * Licensed under the Apache License, Version 2.0.
+ */
+
+/*
     ChibiOS - Copyright (C) 2006..2015 Giovanni Di Sirio
 
     Licensed under the Apache License, Version 2.0 (the "License");

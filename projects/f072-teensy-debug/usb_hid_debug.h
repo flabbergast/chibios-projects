@@ -1,4 +1,11 @@
 /*
+ * Copyright (c) 2015 flabbergast <s3+flabbergast@sdfeu.org>
+ *
+ * Based on the work of Guillaume Duc, original licence below.
+ * The original license applies to the whole current file.
+ */
+
+/*
 
   Copyright (c) 2014 Guillaume Duc <guillaume@guiduc.org>
 
@@ -33,7 +40,7 @@
  *  - this much gets transmitted with every IN packet
  */
 
-#define DEBUG_TX_SIZE 5
+#define DEBUG_TX_SIZE 8
 
 /*
  * Teensy HID debug IN endpoint number

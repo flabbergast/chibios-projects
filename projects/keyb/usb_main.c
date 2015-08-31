@@ -804,12 +804,11 @@ static bool usb_request_hook_cb(USBDriver * usbp) {
             switch(usbp->setup[4]) { // LSB(wIndex) (check MSB==0?)
               case KBD_INTERFACE:
 #ifdef NKRO_ENABLE
-                case NKRO_INTERFACE:
+              case NKRO_INTERFACE:
 #endif
                 usbSetupTransfer(usbp, (uint8_t *)&keyboard_report_sent, sizeof(keyboard_report_sent), NULL);
                 return TRUE;
                 break;
-              // TODO: also got GET_REPORT for NKRO on linux
               default:
                 usbSetupTransfer(usbp, NULL, 0, NULL);
                 return TRUE;

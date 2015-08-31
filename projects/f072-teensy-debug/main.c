@@ -1,4 +1,11 @@
 /*
+ * Copyright (c) 2015 flabbergast <s3+flabbergast@sdfeu.org>
+ *
+ * Based on the work of Guillaume Duc, original licence below.
+ * The original license applies to the whole current file.
+ */
+
+/*
 
   Copyright (c) 2014 Guillaume Duc <guillaume@guiduc.org>
 
@@ -54,10 +61,6 @@ static THD_FUNCTION(buttonThread, arg) {
       if(usbGetDriverStateI (&USBD1) == USB_ACTIVE) {
         chSysUnlock();
         chnWrite((BaseChannel *)&HIDD, (uint8_t *)"Hello, world!\n", 14);
-        // print("button state is ");
-        // usb_debug_putchar('0'+wkup_cur_state);
-        // usb_debug_putchar('\n');
-        //usb_debug_flush_output(&HIDD);
       }
       else
         chSysUnlock();

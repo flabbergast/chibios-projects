@@ -6,6 +6,11 @@
  *
  * Some code also based on the USB Serial implementation
  * in ChibiOS 3.0.1, see the license in ChibiOS.
+ *
+ * Finally, the print helpers are originally from
+ * http://www.pjrc.com/teensy/
+ * Copyright (c) 2008 PJRC.COM, LLC
+ *  - see the license towards the end of this file.
  */
 
 /*

@@ -1,4 +1,11 @@
 /*
+ * Copyright (c) 2015 flabbergast <s3+flabbergast@sdfeu.org>
+ *
+ * Based on the work of Guillaume Duc, original licence below.
+ * The original license applies to the whole current file.
+ */
+
+/*
 
   Copyright (c) 2014 Guillaume Duc <guillaume@guiduc.org>
 
