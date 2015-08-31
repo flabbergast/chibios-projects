@@ -28,11 +28,10 @@
 uint8_t keyboard_idle = 0;
 uint8_t keyboard_protocol = 1;
 uint16_t keyboard_led_stats = 0;
+volatile uint16_t keyboard_idle_count = 0;
 #ifdef NKRO_ENABLE
 bool keyboard_nkro = true;
 #endif /* NKRO_ENABLE */
-
-volatile uint16_t keyboard_idle_count = 0;
 
 report_keyboard_t keyboard_report_sent = { // this declaration depends on KEYBOARD_REPORT_KEYS
 #ifdef NKRO_ENABLE
@@ -41,6 +40,15 @@ report_keyboard_t keyboard_report_sent = { // this declaration depends on KEYBOA
   {0,0,0,0,0,0,0,0}
 #endif /* NKRO_ENABLE */
   };
+
+#ifdef CONSOLE_ENABLE
+// The emission queue
+output_queue_t console_queue;
+static uint8_t console_queue_buffer[CONSOLE_QUEUE_BUFFER_SIZE];
+static virtual_timer_t console_flush_timer;
+void console_queue_onotify(io_queue_t * qp);
+static void console_flush_cb(void *arg);
+#endif /* CONSOLE_ENABLE */
 
 /* ---------------------------------------------------------
  *            Descriptors and USB driver objects
@@ -725,6 +733,7 @@ static const USBEndpointConfig nkro_ep_config = {
  */
 
 // Handles the USB driver global events
+// TODO: maybe disable some things when connection is lost?
 static void usb_event_cb(USBDriver * usbp, usbevent_t event) {
   switch(event) {
     case USB_EVENT_RESET:
@@ -740,6 +749,7 @@ static void usb_event_cb(USBDriver * usbp, usbevent_t event) {
 #endif /* MOUSE_ENABLE */
 #ifdef CONSOLE_ENABLE
       usbInitEndpointI(usbp, CONSOLE_ENDPOINT, &console_ep_config);
+      // don't need to start the flush timer, it starts from console_in_cb automatically
 #endif /* CONSOLE_ENABLE */
 #ifdef EXTRAKEY_ENABLE
       usbInitEndpointI(usbp, EXTRA_ENDPOINT, &extra_ep_config);
@@ -902,6 +912,11 @@ void init_usb_driver(void) {
   chThdSleepMilliseconds(1500);
   usbStart(&USB_DRIVER, &usbcfg);
   usbConnectBus(&USB_DRIVER);
+
+#ifdef CONSOLE_ENABLE
+  oqObjectInit(&console_queue, console_queue_buffer, sizeof(console_queue_buffer), console_queue_onotify, NULL);
+  chVTObjectInit(&console_flush_timer);
+#endif
 }
 
 /* ---------------------------------------------------------
@@ -1075,9 +1090,91 @@ void send_consumer(uint16_t data) {
 
 // debug IN callback hander
 void console_in_cb(USBDriver* usbp, usbep_t ep) {
-  // STUB
-  (void)usbp;
   (void)ep;
+  osalSysLockFromISR();
+
+  // rearm the timer
+  chVTSetI(&console_flush_timer, MS2ST(CONSOLE_FLUSH_MS), console_flush_cb, NULL);
+
+  // Check if there is data to send left in the output queue
+  if(chOQGetFullI(&console_queue) >= CONSOLE_SIZE) {
+    osalSysUnlockFromISR();
+    usbPrepareQueuedTransmit(usbp, CONSOLE_ENDPOINT, &console_queue, CONSOLE_SIZE);
+    osalSysLockFromISR();
+    usbStartTransmitI(usbp, CONSOLE_ENDPOINT);
+  }
+
+  osalSysUnlockFromISR();
+}
+
+/* Callback when data is inserted into the output queue */
+/* Called from a locked state */
+void console_queue_onotify(io_queue_t * qp) {
+  (void)qp;
+
+  if(usbGetDriverStateI(&USB_DRIVER) != USB_ACTIVE)
+    return;
+
+  if(!usbGetTransmitStatusI(&USB_DRIVER, CONSOLE_ENDPOINT)
+      && (chOQGetFullI(&console_queue) >= CONSOLE_SIZE)) {
+    osalSysUnlock();
+    usbPrepareQueuedTransmit(&USB_DRIVER, CONSOLE_ENDPOINT, &console_queue, CONSOLE_SIZE);
+    osalSysLock();
+    usbStartTransmitI(&USB_DRIVER, CONSOLE_ENDPOINT);
+  }
+}
+
+/* Flush timer code */
+// callback (called from ISR, unlocked state)
+static void console_flush_cb(void *arg) {
+  (void)arg;
+  size_t i,n;
+  uint8_t buf[CONSOLE_SIZE]; /* TODO: a solution without extra buffer? */
+  osalSysLockFromISR();
+
+  // check that the states of things are as they're supposed to
+  if(usbGetDriverStateI(&USB_DRIVER) != USB_ACTIVE) {
+    // rearm the timer
+    chVTSetI(&console_flush_timer, MS2ST(CONSOLE_FLUSH_MS), console_flush_cb, NULL);
+    osalSysUnlockFromISR();
+    return;
+  }
+
+  // don't do anything if the queue is empty or has enough stuff in it
+  if(((n = oqGetFullI(&console_queue)) == 0) || (n >= CONSOLE_SIZE)) {
+    // rearm the timer
+    chVTSetI(&console_flush_timer, MS2ST(CONSOLE_FLUSH_MS), console_flush_cb, NULL);
+    osalSysUnlockFromISR();
+    return;
+  }
+
+  // there's stuff hanging in the queue - so dequeue and send
+  for(i=0; i<n; i++)
+    buf[i] = (uint8_t)oqGetI(&console_queue);
+  for(i=n; i<CONSOLE_SIZE; i++)
+    buf[i] = 0;
+  osalSysUnlockFromISR();
+  usbPrepareTransmit(&USB_DRIVER, CONSOLE_ENDPOINT, buf, CONSOLE_SIZE);
+  osalSysLockFromISR();
+  (void) usbStartTransmitI(&USB_DRIVER, CONSOLE_ENDPOINT);
+  
+  // rearm the timer
+  chVTSetI(&console_flush_timer, MS2ST(CONSOLE_FLUSH_MS), console_flush_cb, NULL);
+  osalSysUnlockFromISR();
+}
+
+
+int8_t sendchar(uint8_t c) {
+  osalSysLock();
+  if(usbGetDriverStateI(&USB_DRIVER) != USB_ACTIVE) {
+    osalSysUnlock();
+    return 0;
+  }
+  osalSysUnlock();
+  // should get suspended and wait if the queue is full
+  // but it's not blocking even if noone is listening,
+  //  because the USB packets are sent anyway
+  return(chOQPut(&console_queue, c));
 }
 
 #else /* CONSOLE_ENABLE */

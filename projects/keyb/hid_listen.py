@@ -4,10 +4,17 @@ import hid
 import time
 import sys
 
+#for d in hid.enumerate(0, 0):
+    #keys = d.keys()
+    #keys.sort()
+    #for key in keys:
+        #print "%s : %s" % (key, d[key])
+    #print ""
+
 try:
     print "Opening device"
     h = hid.device()
-    h.open(0x16c0, 0x0479) # teensy
+    h.open(0xfeed, 0xbabe) # tmk
 
     print "Manufacturer: %s" % h.get_manufacturer_string()
     print "Product: %s" % h.get_product_string()

@@ -131,23 +131,17 @@ typedef struct {
 
 #define CONSOLE_INTERFACE      2
 #define CONSOLE_ENDPOINT       3
-#define CONSOLE_SIZE           32
+#define CONSOLE_SIZE           16
 
 // Number of IN reports that can be stored inside the output queue
 #define CONSOLE_QUEUE_CAPACITY 2
 #define CONSOLE_QUEUE_BUFFER_SIZE (CONSOLE_QUEUE_CAPACITY * CONSOLE_SIZE)
 
-// The emission queue
-extern output_queue_t console_queue;
-
-// from PJRC
-extern volatile uint8_t console_flush_timer;
-
-// Initialize the USB Input/Output queues
-void init_console_queue(void);
+// Console flush time
+#define CONSOLE_FLUSH_MS 50
 
 // Putchar over the USB console
-msg_t sendchar(uint8_t c);
+int8_t sendchar(uint8_t c);
 
 // Flush output (send everything immediately)
 void console_flush_output(void);

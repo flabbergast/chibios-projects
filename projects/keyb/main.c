@@ -35,6 +35,16 @@ report_keyboard_t report = {
 #endif
 };
 
+#ifdef MOUSE_ENABLE
+report_mouse_t mouse_report = {
+  .buttons = 0,
+  .x = 50,
+  .y = 50,
+  .v = 0,
+  .h = 0
+};
+#endif
+
 /*
  * Button thread
  *
@@ -56,16 +66,53 @@ static THD_FUNCTION(buttonThread, arg) {
       chSysLock();
       if(usbGetDriverStateI (&USBD1) == USB_ACTIVE) {
         chSysUnlock();
-#ifdef NKRO_ENABLE
-        if(wkup_cur_state) {
-          report.nkro.bits[2] |= 2; // 'n'
-        } else {
-          report.nkro.bits[2] &= 0b11111101;
+        /* just some test code for various reports
+         * choose one and comment the others
+         */
+
+        /* keyboard test, sends 'n' in nkro mode, 'm' in normal mode */
+// #ifdef NKRO_ENABLE
+//         if(wkup_cur_state) {
+//           report.nkro.bits[2] |= 2; // 'n'
+//         } else {
+//           report.nkro.bits[2] &= 0b11111101;
+//         }
+// #else
+//         report.keys[0] = (wkup_cur_state ? 0x10 : 0); // 'm'
+// #endif
+//         send_keyboard(&report);
+
+        /* mouse test, moves the mouse pointer diagonally right and down */
+        // send_mouse(&mouse_report);
+
+        /* consumer keys test, sends 'mute audio' */
+        // if(wkup_cur_state) {
+        //   send_consumer(AUDIO_MUTE);
+        // } else {
+        //   send_consumer(0);
+        // }
+
+        /* system keys test, sends 'sleep key' 
+         * on macs it takes a second or two for the system to react
+         * I suppose it's to prevent from accidental hits of the sleep key
+         */
+        // if(wkup_cur_state) {
+        //   send_system(SYSTEM_SLEEP);
+        // } else {
+        //   send_system(0);
+        // }
+
+        /* debug console test, sends the alphabet */
+        sendchar((wkup_cur_state ? '1' : '0'));
+        uint8_t n;
+        for(n=0; n<26; n++) {
+          sendchar('A'+n);
+          sendchar('a'+n);
         }
-#else
-        report.keys[0] = (wkup_cur_state ? 0x10 : 0); // 'm'
-#endif
-        send_keyboard(&report);
+        sendchar('\n');
+        palSetPad(GPIOC, GPIOC_LED_ORANGE);
+        chThdSleepMilliseconds(50);
+        palClearPad(GPIOC, GPIOC_LED_ORANGE);
       }
       else
         chSysUnlock();
