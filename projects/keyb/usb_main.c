@@ -1,57 +1,51 @@
 /*
-
-  Copyright (c) 2014 Guillaume Duc <guillaume@guiduc.org>
-
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction, including without limitation the rights
-  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
-
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
-
-*/
+ * (c) 2015 flabberast <s3+flabbergast@sdfeu.org>
+ *
+ * Based on the following work:
+ *  - Guillaume Duc's raw hid example (MIT License)
+ *    https://github.com/guiduc/usb-hid-chibios-example
+ *  - PJRC Teensy examples (MIT License)
+ *    https://www.pjrc.com/teensy/usb_keyboard.html
+ *  - hasu's TMK keyboard code (GPL v2 and some code Modified BSD)
+ *    https://github.com/tmk/tmk_keyboard/
+ *  - ChibiOS demo code (Apache 2.0 License)
+ *    http://www.chibios.org
+ *
+ * Since some GPL'd code is used, this work is licensed under
+ * GPL v2 or later.
+ */
 
 #include "ch.h"
 #include "hal.h"
 
 #include "usb_main.h"
-#include "usb_keyboard.h"
-#ifdef MOUSE_ENABLE
-  #include "usb_mouse.h"
-#endif
-#ifdef CONSOLE_ENABLE
-  #include "usb_console.h"
-#endif
-#ifdef EXTRAKEY_ENABLE
-  #include "usb_extra.h"
-#endif
 
-// Mac OS-X and Linux automatically load the correct drivers.  On
-// Windows, even though the driver is supplied by Microsoft, an
-// INF file is needed to load the driver.  These numbers need to
-// match the INF file.
-#ifndef VENDOR_ID
-#   define VENDOR_ID    0xFEED
-#endif
+/* ---------------------------------------------------------
+ *       Global interface variables and declarations
+ * ---------------------------------------------------------
+ */
 
-#ifndef PRODUCT_ID
-#   define PRODUCT_ID   0xBABE
-#endif
+uint8_t keyboard_idle = 0;
+uint8_t keyboard_protocol = 1;
+uint16_t keyboard_led_stats = 0;
+#ifdef NKRO_ENABLE
+bool keyboard_nkro = true;
+#endif /* NKRO_ENABLE */
 
-#ifndef DEVICE_VER
-#   define DEVICE_VER   0x0100
-#endif
+volatile uint16_t keyboard_idle_count = 0;
+
+report_keyboard_t keyboard_report_sent = { // this declaration depends on KEYBOARD_REPORT_KEYS
+#ifdef NKRO_ENABLE
+  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+#else /* NKRO_ENABLE */
+  {0,0,0,0,0,0,0,0}
+#endif /* NKRO_ENABLE */
+  };
+
+/* ---------------------------------------------------------
+ *            Descriptors and USB driver objects
+ * ---------------------------------------------------------
+ */
 
 // HID specific constants
 #define USB_DESCRIPTOR_HID 0x21
@@ -178,7 +172,7 @@ static const USBDescriptor nkro_hid_report_descriptor = {
   sizeof nkro_hid_report_desc_data,
   nkro_hid_report_desc_data
 };
-#endif
+#endif /* NKRO_ENABLE */
 
 #ifdef MOUSE_ENABLE
 // Mouse Protocol 1, HID 1.11 spec, Appendix B, page 59-60, with wheel extension
@@ -239,7 +233,7 @@ static const USBDescriptor mouse_hid_report_descriptor = {
   sizeof mouse_hid_report_desc_data,
   mouse_hid_report_desc_data
 };
-#endif
+#endif /* MOUSE_ENABLE */
 
 #ifdef CONSOLE_ENABLE
 static const uint8_t console_hid_report_desc_data[] = {
@@ -259,7 +253,7 @@ static const USBDescriptor console_hid_report_descriptor = {
   sizeof console_hid_report_desc_data,
   console_hid_report_desc_data
 };
-#endif
+#endif /* CONSOLE_ENABLE */
 
 #ifdef EXTRAKEY_ENABLE
 // audio controls & system controls
@@ -297,7 +291,7 @@ static const USBDescriptor extra_hid_report_descriptor = {
   sizeof extra_hid_report_desc_data,
   extra_hid_report_desc_data
 };
-#endif
+#endif /* EXTRAKEY_ENABLE */
 
 
 /*
@@ -315,30 +309,30 @@ static const USBDescriptor extra_hid_report_descriptor = {
 #ifdef MOUSE_ENABLE
 #   define MOUSE_HID_DESC_NUM           (KBD_HID_DESC_NUM + 1)
 #   define MOUSE_HID_DESC_OFFSET        (9+(9+9+7)*MOUSE_HID_DESC_NUM+9)
-#else
+#else /* MOUSE_ENABLE */
 #   define MOUSE_HID_DESC_NUM           (KBD_HID_DESC_NUM + 0)
-#endif
+#endif /* MOUSE_ENABLE */
 
 #ifdef CONSOLE_ENABLE
 #define CONSOLE_HID_DESC_NUM              (MOUSE_HID_DESC_NUM + 1)
 #define CONSOLE_HID_DESC_OFFSET           (9+(9+9+7)*CONSOLE_HID_DESC_NUM+9)
-#else
+#else /* CONSOLE_ENABLE */
 #   define CONSOLE_HID_DESC_NUM           (MOUSE_HID_DESC_NUM + 0)
-#endif
+#endif /* CONSOLE_ENABLE */
 
 #ifdef EXTRAKEY_ENABLE
 #   define EXTRA_HID_DESC_NUM           (CONSOLE_HID_DESC_NUM + 1)
 #   define EXTRA_HID_DESC_OFFSET        (9+(9+9+7)*EXTRA_HID_DESC_NUM+9)
-#else
+#else /* EXTRAKEY_ENABLE */
 #   define EXTRA_HID_DESC_NUM           (CONSOLE_HID_DESC_NUM + 0)
-#endif
+#endif /* EXTRAKEY_ENABLE */
 
 #ifdef NKRO_ENABLE
 #   define NKRO_HID_DESC_NUM            (EXTRA_HID_DESC_NUM + 1)
 #   define NKRO_HID_DESC_OFFSET         (9+(9+9+7)*EXTRA_HID_DESC_NUM+9)
-#else
+#else /* NKRO_ENABLE */
 #   define NKRO_HID_DESC_NUM            (EXTRA_HID_DESC_NUM + 0)
-#endif
+#endif /* NKRO_ENABLE */
 
 #define NUM_INTERFACES                  (NKRO_HID_DESC_NUM + 1)
 #define CONFIG1_DESC_SIZE               (9+(9+9+7)*NUM_INTERFACES)
@@ -405,7 +399,7 @@ static const uint8_t hid_configuration_descriptor_data[] = {
                     0x03,      // bmAttributes (Interrupt)
                     MOUSE_SIZE,  // wMaxPacketSize
                     1),        // bInterval
-  #endif
+  #endif /* MOUSE_ENABLE */
 
   #ifdef CONSOLE_ENABLE
   // Interface Descriptor (9 bytes) USB spec 9.6.5, page 267-269, Table 9-12
@@ -424,14 +418,14 @@ static const uint8_t hid_configuration_descriptor_data[] = {
   USB_DESC_BYTE(0),            // bCountryCode
   USB_DESC_BYTE(1),            // bNumDescriptors
   USB_DESC_BYTE(0x22),         // bDescriptorType (report desc)
-  USB_DESC_WORD(sizeof(console_report_desc_data)), // wDescriptorLength
+  USB_DESC_WORD(sizeof(console_hid_report_desc_data)), // wDescriptorLength
 
   // Endpoint Descriptor (7 bytes) USB spec 9.6.6, page 269-271, Table 9-13
   USB_DESC_ENDPOINT(CONSOLE_ENDPOINT | 0x80,  // bEndpointAddress
                     0x03,      // bmAttributes (Interrupt)
                     CONSOLE_SIZE, // wMaxPacketSize
                     1),        // bInterval
-  #endif
+  #endif /* CONSOLE_ENABLE */
 
   #ifdef EXTRAKEY_ENABLE
   // Interface Descriptor (9 bytes) USB spec 9.6.5, page 267-269, Table 9-12
@@ -450,14 +444,14 @@ static const uint8_t hid_configuration_descriptor_data[] = {
   USB_DESC_BYTE(0),            // bCountryCode
   USB_DESC_BYTE(1),            // bNumDescriptors
   USB_DESC_BYTE(0x22),         // bDescriptorType (report desc)
-  USB_DESC_WORD(sizeof(extra_report_desc_data)), // wDescriptorLength
+  USB_DESC_WORD(sizeof(extra_hid_report_desc_data)), // wDescriptorLength
 
   // Endpoint Descriptor (7 bytes) USB spec 9.6.6, page 269-271, Table 9-13
   USB_DESC_ENDPOINT(EXTRA_ENDPOINT | 0x80,  // bEndpointAddress
                     0x03,      // bmAttributes (Interrupt)
                     EXTRA_SIZE, // wMaxPacketSize
                     10),       // bInterval
-  #endif
+  #endif /* EXTRAKEY_ENABLE */
 
   #ifdef NKRO_ENABLE
   // Interface Descriptor (9 bytes) USB spec 9.6.5, page 267-269, Table 9-12
@@ -483,7 +477,7 @@ static const uint8_t hid_configuration_descriptor_data[] = {
                     0x03,      // bmAttributes (Interrupt)
                     NKRO_SIZE, // wMaxPacketSize
                     1),       // bInterval
-  #endif
+  #endif /* NKRO_ENABLE */
 };
 
 // Configuration Descriptor wrapper
@@ -503,25 +497,25 @@ static const USBDescriptor mouse_hid_descriptor = {
   HID_DESCRIPTOR_SIZE,
   &hid_configuration_descriptor_data[MOUSE_HID_DESC_OFFSET]
 };
-#endif
+#endif /* MOUSE_ENABLE */
 #ifdef CONSOLE_ENABLE
 static const USBDescriptor console_hid_descriptor = {
   HID_DESCRIPTOR_SIZE,
   &hid_configuration_descriptor_data[CONSOLE_HID_DESC_OFFSET]
 };
-#endif
+#endif /* CONSOLE_ENABLE */
 #ifdef EXTRAKEY_ENABLE
 static const USBDescriptor extra_hid_descriptor = {
   HID_DESCRIPTOR_SIZE,
   &hid_configuration_descriptor_data[EXTRA_HID_DESC_OFFSET]
 };
-#endif
+#endif /* EXTRAKEY_ENABLE */
 #ifdef NKRO_ENABLE
 static const USBDescriptor nkro_hid_descriptor = {
   HID_DESCRIPTOR_SIZE,
   &hid_configuration_descriptor_data[NKRO_HID_DESC_OFFSET]
 };
-#endif
+#endif /* NKRO_ENABLE */
 
 
 // U.S. English language identifier
@@ -594,19 +588,19 @@ static const USBDescriptor* usb_get_descriptor_cb(USBDriver* usbp, uint8_t dtype
 #ifdef MOUSE_ENABLE
         case MOUSE_INTERFACE:
           return &mouse_hid_descriptor;
-#endif
+#endif /* MOUSE_ENABLE */
 #ifdef CONSOLE_ENABLE
         case CONSOLE_INTERFACE:
           return &console_hid_descriptor;
-#endif
+#endif /* CONSOLE_ENABLE */
 #ifdef EXTRAKEY_ENABLE
         case EXTRA_INTERFACE:
           return &extra_hid_descriptor;
-#endif
+#endif /* EXTRAKEY_ENABLE */
 #ifdef NKRO_ENABLE
         case NKRO_INTERFACE:
           return &nkro_hid_descriptor;
-#endif
+#endif /* NKRO_ENABLE */
       }
     case USB_DESCRIPTOR_HID_REPORT:     // HID Report Descriptor
       switch(lang) {
@@ -615,19 +609,19 @@ static const USBDescriptor* usb_get_descriptor_cb(USBDriver* usbp, uint8_t dtype
 #ifdef MOUSE_ENABLE
         case MOUSE_INTERFACE:
           return &mouse_hid_report_descriptor;
-#endif
+#endif /* MOUSE_ENABLE */
 #ifdef CONSOLE_ENABLE
         case CONSOLE_INTERFACE:
           return &console_hid_report_descriptor;
-#endif
+#endif /* CONSOLE_ENABLE */
 #ifdef EXTRAKEY_ENABLE
         case EXTRA_INTERFACE:
           return &extra_hid_report_descriptor;
-#endif
+#endif /* EXTRAKEY_ENABLE */
 #ifdef NKRO_ENABLE
         case NKRO_INTERFACE:
           return &nkro_hid_report_descriptor;
-#endif
+#endif /* NKRO_ENABLE */
       }      
   }
   return NULL;
@@ -666,7 +660,7 @@ static const USBEndpointConfig mouse_ep_config = {
   2,                            // IN multiplier
   NULL                          // SETUP buffer (not a SETUP endpoint)
 };
-#endif
+#endif /* MOUSE_ENABLE */
 
 #ifdef CONSOLE_ENABLE
 // console endpoint state structure
@@ -685,7 +679,7 @@ static const USBEndpointConfig console_ep_config = {
   2,                            // IN multiplier
   NULL                          // SETUP buffer (not a SETUP endpoint)
 };
-#endif
+#endif /* CONSOLE_ENABLE */
 
 #ifdef EXTRAKEY_ENABLE
 // extrakey endpoint state structure
@@ -704,7 +698,7 @@ static const USBEndpointConfig extra_ep_config = {
   2,                            // IN multiplier
   NULL                          // SETUP buffer (not a SETUP endpoint)
 };
-#endif
+#endif /* EXTRAKEY_ENABLE */
 
 #ifdef NKRO_ENABLE
 // nkro endpoint state structure
@@ -723,8 +717,12 @@ static const USBEndpointConfig nkro_ep_config = {
   2,                            // IN multiplier
   NULL                          // SETUP buffer (not a SETUP endpoint)
 };
-#endif
+#endif /* NKRO_ENABLE */
 
+/* ---------------------------------------------------------
+ *                  USB driver functions
+ * ---------------------------------------------------------
+ */
 
 // Handles the USB driver global events
 static void usb_event_cb(USBDriver * usbp, usbevent_t event) {
@@ -739,16 +737,16 @@ static void usb_event_cb(USBDriver * usbp, usbevent_t event) {
       usbInitEndpointI(usbp, KBD_ENDPOINT, &kbd_ep_config);
 #ifdef MOUSE_ENABLE
       usbInitEndpointI(usbp, MOUSE_ENDPOINT, &mouse_ep_config);
-#endif
+#endif /* MOUSE_ENABLE */
 #ifdef CONSOLE_ENABLE
       usbInitEndpointI(usbp, CONSOLE_ENDPOINT, &console_ep_config);
-#endif
+#endif /* CONSOLE_ENABLE */
 #ifdef EXTRAKEY_ENABLE
       usbInitEndpointI(usbp, EXTRA_ENDPOINT, &extra_ep_config);
-#endif
+#endif /* EXTRAKEY_ENABLE */
 #ifdef NKRO_ENABLE
       usbInitEndpointI(usbp, NKRO_ENDPOINT, &nkro_ep_config);
-#endif
+#endif /* NKRO_ENABLE */
       osalSysUnlockFromISR();
       return;
     case USB_EVENT_SUSPEND:
@@ -805,7 +803,7 @@ static bool usb_request_hook_cb(USBDriver * usbp) {
               case KBD_INTERFACE:
 #ifdef NKRO_ENABLE
               case NKRO_INTERFACE:
-#endif
+#endif /* NKRO_ENABLE */
                 usbSetupTransfer(usbp, (uint8_t *)&keyboard_report_sent, sizeof(keyboard_report_sent), NULL);
                 return TRUE;
                 break;
@@ -837,7 +835,7 @@ static bool usb_request_hook_cb(USBDriver * usbp) {
                     // and reading the next byte doesn't work properly
                     // and fails with endpoint_busy problem.
                 case NKRO_INTERFACE:
-#endif
+#endif  /* NKRO_ENABLE */
                   // keyboard_led_stats = <read byte from next OUT report>
                   // keyboard_led_stats needs be word (or dword), otherwise we get an exception on F0
                   usbSetupTransfer(usbp, (uint8_t*)&keyboard_led_stats, 1, NULL);
@@ -850,7 +848,7 @@ static bool usb_request_hook_cb(USBDriver * usbp) {
               keyboard_protocol = ((usbp->setup[2])!=0x00); // LSB(wValue)
 #ifdef NKRO_ENABLE
               keyboard_nkro = !!keyboard_protocol;
-#endif
+#endif /* NKRO_ENABLE */
             }
             usbSetupTransfer(usbp, NULL, 0, NULL);
             return TRUE;
@@ -905,3 +903,186 @@ void init_usb_driver(void) {
   usbStart(&USB_DRIVER, &usbcfg);
   usbConnectBus(&USB_DRIVER);
 }
+
+/* ---------------------------------------------------------
+ *                  Keyboard functions
+ * ---------------------------------------------------------
+ */
+
+// keyboard IN callback hander (a kbd report has made it IN)
+void kbd_in_cb(USBDriver* usbp, usbep_t ep) {
+  // STUB
+  (void)usbp;
+  (void)ep;
+}
+
+#ifdef NKRO_ENABLE
+// nkro IN callback hander (a nkro report has made it IN)
+void nkro_in_cb(USBDriver* usbp, usbep_t ep) {
+  // STUB
+  (void)usbp;
+  (void)ep;
+}
+#endif /* NKRO_ENABLE */
+
+// start-of-frame handler
+// i guess it would be better to re-implement using timers,
+//  so that this is not going to have to be checked every 1ms
+void kbd_sof_cb(USBDriver *usbp) {
+#ifdef NKRO_ENABLE
+  if(!keyboard_nkro && keyboard_idle) {
+#else /* NKRO_ENABLE */
+  if(keyboard_idle) {
+#endif /* NKRO_ENABLE */
+    keyboard_idle_count++;
+    if(keyboard_idle_count == 4*(uint16_t)keyboard_idle) {
+      keyboard_idle_count = 0;
+      // TODO: are we sure we want the KBD_ENDPOINT?
+      usbPrepareTransmit(usbp, KBD_ENDPOINT, (uint8_t *)&keyboard_report_sent, sizeof(keyboard_report_sent));
+      osalSysLockFromISR();
+      usbStartTransmitI(usbp, KBD_ENDPOINT);
+      osalSysUnlockFromISR();
+    }
+  }
+}
+
+// send LED status
+uint8_t keyboard_leds(void) {
+  return (uint8_t)(keyboard_led_stats&0xFF);
+}
+
+// prepare and start sending a report IN
+// not callable from ISR or locked state
+void send_keyboard(report_keyboard_t *report) {
+  osalSysLock();
+  if(usbGetDriverStateI(&USB_DRIVER) != USB_ACTIVE) {
+    osalSysUnlock();
+    return;
+  }
+  osalSysUnlock();
+
+#ifdef NKRO_ENABLE
+  if(keyboard_nkro) {  // NKRO protocol
+    usbPrepareTransmit(&USB_DRIVER, NKRO_ENDPOINT, (uint8_t *)report, sizeof(report_keyboard_t));
+    osalSysLock();
+    usbStartTransmitI(&USB_DRIVER, NKRO_ENDPOINT);
+    osalSysUnlock();
+  } else
+#endif /* NKRO_ENABLE */
+  { // boot protocol
+    usbPrepareTransmit(&USB_DRIVER, KBD_ENDPOINT, (uint8_t *)report, sizeof(report_keyboard_t));
+    osalSysLock();
+    usbStartTransmitI(&USB_DRIVER, KBD_ENDPOINT);
+    osalSysUnlock();
+  }
+  keyboard_report_sent = *report;
+}
+
+/* ---------------------------------------------------------
+ *                     Mouse functions
+ * ---------------------------------------------------------
+ */
+
+#ifdef MOUSE_ENABLE
+
+// mouse IN callback hander (a mouse report has made it IN)
+void mouse_in_cb(USBDriver* usbp, usbep_t ep) {
+  (void)usbp;
+  (void)ep;
+}
+
+void send_mouse(report_mouse_t *report) {
+  osalSysLock();
+  if(usbGetDriverStateI(&USB_DRIVER) != USB_ACTIVE) {
+    osalSysUnlock();
+    return;
+  }
+  osalSysUnlock();
+
+  /* TODO: LUFA manually waits for the endpoint to become ready
+   * for about 10ms for mouse, kbd, system; 1ms for nkro
+   * is this really needed?
+   */
+
+  usbPrepareTransmit(&USB_DRIVER, MOUSE_ENDPOINT, (uint8_t *)report, sizeof(report_mouse_t));
+  osalSysLock();
+  usbStartTransmitI(&USB_DRIVER, MOUSE_ENDPOINT);
+  osalSysUnlock();
+}
+
+#else /* MOUSE_ENABLE */
+void send_mouse(report_mouse_t *report) {
+  (void)report;
+}
+#endif /* MOUSE_ENABLE */
+
+/* ---------------------------------------------------------
+ *                   Extrakey functions
+ * ---------------------------------------------------------
+ */
+
+#ifdef EXTRAKEY_ENABLE
+
+// extrakey IN callback hander
+void extra_in_cb(USBDriver* usbp, usbep_t ep) {
+  // STUB
+  (void)usbp;
+  (void)ep;
+}
+
+static void send_extra_report(uint8_t report_id, uint16_t data) {
+  osalSysLock();
+  if(usbGetDriverStateI(&USB_DRIVER) != USB_ACTIVE) {
+    osalSysUnlock();
+    return;
+  }
+
+  report_extra_t report = {
+    .report_id = report_id,
+    .usage = data
+  };
+
+  osalSysUnlock();
+  usbPrepareTransmit(&USB_DRIVER, EXTRA_ENDPOINT, (uint8_t *)&report, sizeof(report_extra_t));
+  osalSysLock();
+  usbStartTransmitI(&USB_DRIVER, EXTRA_ENDPOINT);
+  osalSysUnlock();
+}
+
+void send_system(uint16_t data) {
+  send_extra_report(REPORT_ID_SYSTEM, data);
+}
+
+void send_consumer(uint16_t data) {
+  send_extra_report(REPORT_ID_CONSUMER, data);
+}
+
+#else /* EXTRAKEY_ENABLE */
+void send_system(uint16_t data) {
+  (void)data;
+}
+void send_consumer(uint16_t data) {
+  (void)data;
+}
+#endif /* EXTRAKEY_ENABLE */
+
+/* ---------------------------------------------------------
+ *                   Console functions
+ * ---------------------------------------------------------
+ */
+
+#ifdef CONSOLE_ENABLE
+
+// debug IN callback hander
+void console_in_cb(USBDriver* usbp, usbep_t ep) {
+  // STUB
+  (void)usbp;
+  (void)ep;
+}
+
+#else /* CONSOLE_ENABLE */
+int8_t sendchar(uint8_t c) {
+  (void)c;
+  return 0;
+}
+#endif /* CONSOLE_ENABLE */

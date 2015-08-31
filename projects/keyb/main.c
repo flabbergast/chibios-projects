@@ -26,7 +26,6 @@
 #include "hal.h"
 
 #include "usb_main.h"
-#include "usb_keyboard.h"
 
 report_keyboard_t report = {
 #ifdef NKRO_ENABLE
@@ -130,6 +129,6 @@ int main (void) {
   while(true) {
     chThdSleepMilliseconds(200);
     // caps lock led status
-    palWritePad(GPIOC, GPIOC_LED_RED, ((keyboard_led_stats & 2) == 2));
+    palWritePad(GPIOC, GPIOC_LED_RED, ((keyboard_leds() & 2) == 2));
   }
 }

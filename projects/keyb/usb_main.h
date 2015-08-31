@@ -1,26 +1,20 @@
 /*
+ * (c) 2015 flabberast <s3+flabbergast@sdfeu.org>
+ *
+ * Based on the following work:
+ *  - Guillaume Duc's raw hid example (MIT License)
+ *    https://github.com/guiduc/usb-hid-chibios-example
+ *  - PJRC Teensy examples (MIT License)
+ *    https://www.pjrc.com/teensy/usb_keyboard.html
+ *  - hasu's TMK keyboard code (GPL v2 and some code Modified BSD)
+ *    https://github.com/tmk/tmk_keyboard/
+ *  - ChibiOS demo code (Apache 2.0 License)
+ *    http://www.chibios.org
+ *
+ * Since some GPL'd code is used, this work is licensed under
+ * GPL v2 or later.
+ */
 
-  Copyright (c) 2014 Guillaume Duc <guillaume@guiduc.org>
-
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction, including without limitation the rights
-  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
-
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
-
-*/
 
 #ifndef _USB_MAIN_H_
 #define _USB_MAIN_H_
@@ -28,10 +22,150 @@
 #include "ch.h"
 #include "hal.h"
 
+// Mac OS-X and Linux automatically load the correct drivers.  On
+// Windows, even though the driver is supplied by Microsoft, an
+// INF file is needed to load the driver.  These numbers need to
+// match the INF file.
+#ifndef VENDOR_ID
+#   define VENDOR_ID    0xFEED
+#endif
+
+#ifndef PRODUCT_ID
+#   define PRODUCT_ID   0xBABE
+#endif
+
+#ifndef DEVICE_VER
+#   define DEVICE_VER   0x0100
+#endif
+
+/* -------------------------
+ * General USB driver header
+ * -------------------------
+ */
+
 // The USB driver to use
 #define USB_DRIVER USBD1
 
 // Initialize the USB driver and bus
 void init_usb_driver(void);
+
+/* ---------------
+ * Keyboard header
+ * ---------------
+ */
+
+// main keyboard (6kro)
+#define KBD_INTERFACE   0
+#define KBD_ENDPOINT    1
+#define KBD_SIZE        8
+#define KBD_REPORT_KEYS   (KBD_SIZE - 2)
+
+// secondary keyboard
+#ifdef NKRO_ENABLE
+#define NKRO_INTERFACE    4
+#define NKRO_ENDPOINT     5
+#define NKRO_SIZE         16
+#define NKRO_REPORT_KEYS  (NKRO_SIZE - 1)
+#endif
+
+// this defines report_keyboard_t and computes REPORT_SIZE defines
+#include "tmk_common/report.h"
+
+// extern report_keyboard_t keyboard_report_sent;
+
+// keyboard IN request callback handler
+void kbd_in_cb(USBDriver *usbp, usbep_t ep);
+
+// start-of-frame handler
+void kbd_sof_cb(USBDriver *usbp);
+
+#ifdef NKRO_ENABLE
+// nkro IN callback hander
+void nkro_in_cb(USBDriver* usbp, usbep_t ep);
+#endif
+
+/* ------------
+ * Mouse header
+ * ------------
+ */
+
+#ifdef MOUSE_ENABLE
+
+#define MOUSE_INTERFACE         1
+#define MOUSE_ENDPOINT          2
+#define MOUSE_SIZE              8
+
+// mouse IN request callback handler
+void mouse_in_cb(USBDriver* usbp, usbep_t ep);
+
+#endif
+
+/* ---------------
+ * Extrakey header
+ * ---------------
+ */
+
+#ifdef EXTRAKEY_ENABLE
+
+#define EXTRA_INTERFACE         3
+#define EXTRA_ENDPOINT          4
+#define EXTRA_SIZE              8
+
+// extrakey IN request callback handler
+void extra_in_cb(USBDriver* usbp, usbep_t ep);
+
+/* extra report structure */
+typedef struct {
+    uint8_t  report_id;
+    uint16_t usage;
+} __attribute__ ((packed)) report_extra_t;
+
+#endif
+
+/* --------------
+ * Console header
+ * --------------
+ */
+
+#ifdef CONSOLE_ENABLE
+
+#define CONSOLE_INTERFACE      2
+#define CONSOLE_ENDPOINT       3
+#define CONSOLE_SIZE           32
+
+// Number of IN reports that can be stored inside the output queue
+#define CONSOLE_QUEUE_CAPACITY 2
+#define CONSOLE_QUEUE_BUFFER_SIZE (CONSOLE_QUEUE_CAPACITY * CONSOLE_SIZE)
+
+// The emission queue
+extern output_queue_t console_queue;
+
+// from PJRC
+extern volatile uint8_t console_flush_timer;
+
+// Initialize the USB Input/Output queues
+void init_console_queue(void);
+
+// Putchar over the USB console
+msg_t sendchar(uint8_t c);
+
+// Flush output (send everything immediately)
+void console_flush_output(void);
+
+// console IN request callback handler
+void console_in_cb(USBDriver* usbp, usbep_t ep);
+
+#endif
+
+/* ---------------------------
+ * Host driver functions (TMK)
+ * ---------------------------
+ */
+
+uint8_t keyboard_leds(void);
+void send_keyboard(report_keyboard_t *report);
+void send_mouse(report_mouse_t *report);
+void send_system(uint16_t data);
+void send_consumer(uint16_t data);
 
 #endif /* _USB_MAIN_H_ */

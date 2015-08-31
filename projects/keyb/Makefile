@@ -122,7 +122,6 @@ CSRC = $(STARTUPSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
        $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
-       usb_keyboard.c \
        usb_main.c \
        main.c
 
@@ -205,7 +204,7 @@ CPPWARN = -Wall -Wextra -Wundef
 #
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS = -DNKRO_ENABLE
+UDEFS = -DNKRO_ENABLE -DEXTRAKEY_ENABLE -DMOUSE_ENABLE
 
 # Define ASM defines here
 UADEFS =
