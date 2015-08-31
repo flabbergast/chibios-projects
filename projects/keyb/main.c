@@ -1,26 +1,19 @@
 /*
-
-  Copyright (c) 2014 Guillaume Duc <guillaume@guiduc.org>
-
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction, including without limitation the rights
-  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
-
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
-
-*/
+ * (c) 2015 flabberast <s3+flabbergast@sdfeu.org>
+ *
+ * Based on the following work:
+ *  - Guillaume Duc's raw hid example (MIT License)
+ *    https://github.com/guiduc/usb-hid-chibios-example
+ *  - PJRC Teensy examples (MIT License)
+ *    https://www.pjrc.com/teensy/usb_keyboard.html
+ *  - hasu's TMK keyboard code (GPL v2 and some code Modified BSD)
+ *    https://github.com/tmk/tmk_keyboard/
+ *  - ChibiOS demo code (Apache 2.0 License)
+ *    http://www.chibios.org
+ *
+ * Since some GPL'd code is used, this work is licensed under
+ * GPL v2 or later.
+ */
 
 #include "ch.h"
 #include "hal.h"
@@ -29,9 +22,9 @@
 
 report_keyboard_t report = {
 #ifdef NKRO_ENABLE
-  {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 #else
-  {0,0,0,0,0,0,0,0}
+  { 0, 0, 0, 0, 0, 0, 0, 0 }
 #endif
 };
 
@@ -45,26 +38,23 @@ report_mouse_t mouse_report = {
 };
 #endif
 
-/*
- * Button thread
+/* Button thread
  *
  * This thread regularely checks the value of the wkup
- * pushbutton. When its state changes, the thread adds a char to the USB IN queue.
+ * pushbutton. When its state changes, something happens.
  */
 static THD_WORKING_AREA(waButtonThread, 128);
-
 static uint8_t wkup_old_state, wkup_cur_state;
-
 static THD_FUNCTION(buttonThread, arg) {
   (void)arg;
 
   wkup_old_state = 0;
 
-  while (1) {
+  while(1) {
     wkup_cur_state = palReadPad(GPIOA, GPIOA_BUTTON);
     if(wkup_cur_state != wkup_old_state) {
       chSysLock();
-      if(usbGetDriverStateI (&USBD1) == USB_ACTIVE) {
+      if(usbGetDriverStateI(&USBD1) == USB_ACTIVE) {
         chSysUnlock();
         /* just some test code for various reports
          * choose one and comment the others
@@ -92,7 +82,7 @@ static THD_FUNCTION(buttonThread, arg) {
         //   send_consumer(0);
         // }
 
-        /* system keys test, sends 'sleep key' 
+        /* system keys test, sends 'sleep key'
          * on macs it takes a second or two for the system to react
          * I suppose it's to prevent from accidental hits of the sleep key
          */
@@ -102,19 +92,20 @@ static THD_FUNCTION(buttonThread, arg) {
         //   send_system(0);
         // }
 
-        /* debug console test, sends the alphabet */
-        sendchar((wkup_cur_state ? '1' : '0'));
-        uint8_t n;
-        for(n=0; n<26; n++) {
-          sendchar('A'+n);
-          sendchar('a'+n);
-        }
-        sendchar('\n');
-        palSetPad(GPIOC, GPIOC_LED_ORANGE);
-        chThdSleepMilliseconds(50);
-        palClearPad(GPIOC, GPIOC_LED_ORANGE);
-      }
-      else
+        /* debug console test, sends the button state and the alphabet
+         *  - also blink, to see that the code above is not blocking
+         */
+        // sendchar((wkup_cur_state ? '1' : '0'));
+        // uint8_t n;
+        // for(n = 0; n < 26; n++) {
+        //   sendchar('A' + n);
+        //   sendchar('a' + n);
+        // }
+        // sendchar('\n');
+        // palSetPad(GPIOC, GPIOC_LED_ORANGE);
+        // chThdSleepMilliseconds(50);
+        // palClearPad(GPIOC, GPIOC_LED_ORANGE);
+      } else
         chSysUnlock();
 
       wkup_old_state = wkup_cur_state;
@@ -124,15 +115,16 @@ static THD_FUNCTION(buttonThread, arg) {
 }
 
 
-/*
- * Blue LED blinker thread, times are in milliseconds.
+/* Blue LED blinker thread, times are in milliseconds.
+ *
+ * Blinks fast when USB is active, slower when it isn't.
  */
 static THD_WORKING_AREA(waBlinkerThread, 128);
 static THD_FUNCTION(blinkerThread, arg) {
   (void)arg;
   chRegSetThreadName("blinkerThread");
 
-  while (true) {
+  while(true) {
     systime_t time = USBD1.state == USB_ACTIVE ? 250 : 500;
     palClearPad(GPIOC, GPIOC_LED_BLUE);
     chThdSleepMilliseconds(time);
@@ -142,40 +134,36 @@ static THD_FUNCTION(blinkerThread, arg) {
 }
 
 
-/*
- * Main thread
+/* Main thread
  */
-int main (void) {
-  // ChibiOS/RT init
-  halInit ();
-  chSysInit ();
+int main(void) {
+  /* ChibiOS/RT init */
+  halInit();
+  chSysInit();
 
   palSetPad(GPIOC, GPIOC_LED_BLUE);
   chThdSleepMilliseconds(400);
   palClearPad(GPIOC, GPIOC_LED_BLUE);
 
-  // Init USB
+  /* Init USB */
   init_usb_driver();
 
+  /* Start blinking */
   chThdCreateStatic(waBlinkerThread, sizeof(waBlinkerThread), NORMALPRIO, blinkerThread, NULL);
 
-  // Wait until the USB is active
+  /* Wait until the USB is active */
   while(USBD1.state != USB_ACTIVE)
     chThdSleepMilliseconds(1000);
 
-  // palSetPad (GPIOC, GPIOC_LED_BLUE);
-
   chThdSleepMilliseconds(500);
 
-  // Start the button thread
+  /* Start the button thread */
   chThdCreateStatic(waButtonThread, sizeof(waButtonThread), NORMALPRIO, buttonThread, NULL);
 
-  /*
-   * Main loop
-   */
+  /* Main loop */
   while(true) {
     chThdSleepMilliseconds(200);
-    // caps lock led status
+    /* caps lock led status */
     palWritePad(GPIOC, GPIOC_LED_RED, ((keyboard_leds() & 2) == 2));
   }
 }

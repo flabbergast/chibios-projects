@@ -22,10 +22,10 @@
 #include "ch.h"
 #include "hal.h"
 
-// Mac OS-X and Linux automatically load the correct drivers.  On
-// Windows, even though the driver is supplied by Microsoft, an
-// INF file is needed to load the driver.  These numbers need to
-// match the INF file.
+/* Mac OS-X and Linux automatically load the correct drivers.  On
+ * Windows, even though the driver is supplied by Microsoft, an
+ * INF file is needed to load the driver.  These numbers need to
+ * match the INF file. */
 #ifndef VENDOR_ID
 #   define VENDOR_ID    0xFEED
 #endif
@@ -43,10 +43,10 @@
  * -------------------------
  */
 
-// The USB driver to use
+/* The USB driver to use */
 #define USB_DRIVER USBD1
 
-// Initialize the USB driver and bus
+/* Initialize the USB driver and bus */
 void init_usb_driver(void);
 
 /* ---------------
@@ -54,13 +54,13 @@ void init_usb_driver(void);
  * ---------------
  */
 
-// main keyboard (6kro)
+/* main keyboard (6kro) */
 #define KBD_INTERFACE   0
 #define KBD_ENDPOINT    1
 #define KBD_SIZE        8
 #define KBD_REPORT_KEYS   (KBD_SIZE - 2)
 
-// secondary keyboard
+/* secondary keyboard */
 #ifdef NKRO_ENABLE
 #define NKRO_INTERFACE    4
 #define NKRO_ENDPOINT     5
@@ -68,20 +68,20 @@ void init_usb_driver(void);
 #define NKRO_REPORT_KEYS  (NKRO_SIZE - 1)
 #endif
 
-// this defines report_keyboard_t and computes REPORT_SIZE defines
+/* this defines report_keyboard_t and computes REPORT_SIZE defines */
 #include "tmk_common/report.h"
 
-// extern report_keyboard_t keyboard_report_sent;
+/* extern report_keyboard_t keyboard_report_sent; */
 
-// keyboard IN request callback handler
+/* keyboard IN request callback handler */
 void kbd_in_cb(USBDriver *usbp, usbep_t ep);
 
-// start-of-frame handler
+/* start-of-frame handler */
 void kbd_sof_cb(USBDriver *usbp);
 
 #ifdef NKRO_ENABLE
-// nkro IN callback hander
-void nkro_in_cb(USBDriver* usbp, usbep_t ep);
+/* nkro IN callback hander */
+void nkro_in_cb(USBDriver *usbp, usbep_t ep);
 #endif
 
 /* ------------
@@ -95,9 +95,8 @@ void nkro_in_cb(USBDriver* usbp, usbep_t ep);
 #define MOUSE_ENDPOINT          2
 #define MOUSE_SIZE              8
 
-// mouse IN request callback handler
-void mouse_in_cb(USBDriver* usbp, usbep_t ep);
-
+/* mouse IN request callback handler */
+void mouse_in_cb(USBDriver *usbp, usbep_t ep);
 #endif
 
 /* ---------------
@@ -111,15 +110,14 @@ void mouse_in_cb(USBDriver* usbp, usbep_t ep);
 #define EXTRA_ENDPOINT          4
 #define EXTRA_SIZE              8
 
-// extrakey IN request callback handler
-void extra_in_cb(USBDriver* usbp, usbep_t ep);
+/* extrakey IN request callback handler */
+void extra_in_cb(USBDriver *usbp, usbep_t ep);
 
 /* extra report structure */
 typedef struct {
-    uint8_t  report_id;
-    uint16_t usage;
+  uint8_t report_id;
+  uint16_t usage;
 } __attribute__ ((packed)) report_extra_t;
-
 #endif
 
 /* --------------
@@ -133,22 +131,21 @@ typedef struct {
 #define CONSOLE_ENDPOINT       3
 #define CONSOLE_SIZE           16
 
-// Number of IN reports that can be stored inside the output queue
+/* Number of IN reports that can be stored inside the output queue */
 #define CONSOLE_QUEUE_CAPACITY 2
 #define CONSOLE_QUEUE_BUFFER_SIZE (CONSOLE_QUEUE_CAPACITY * CONSOLE_SIZE)
 
-// Console flush time
+/* Console flush time */
 #define CONSOLE_FLUSH_MS 50
 
-// Putchar over the USB console
+/* Putchar over the USB console */
 int8_t sendchar(uint8_t c);
 
-// Flush output (send everything immediately)
+/* Flush output (send everything immediately) */
 void console_flush_output(void);
 
-// console IN request callback handler
-void console_in_cb(USBDriver* usbp, usbep_t ep);
-
+/* console IN request callback handler */
+void console_in_cb(USBDriver *usbp, usbep_t ep);
 #endif
 
 /* ---------------------------
@@ -161,5 +158,4 @@ void send_keyboard(report_keyboard_t *report);
 void send_mouse(report_mouse_t *report);
 void send_system(uint16_t data);
 void send_consumer(uint16_t data);
-
 #endif /* _USB_MAIN_H_ */
