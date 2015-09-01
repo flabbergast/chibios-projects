@@ -204,6 +204,7 @@ CPPWARN = -Wall -Wextra -Wundef
 #
 
 # List all user C define here, like -D_DEBUG=1
+## Select which interfaces to include here!
 UDEFS = -DNKRO_ENABLE -DEXTRAKEY_ENABLE -DMOUSE_ENABLE -DCONSOLE_ENABLE
 
 # Define ASM defines here
