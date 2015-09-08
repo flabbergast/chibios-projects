@@ -34,6 +34,13 @@
 
 #include "usb_hid_debug.h"
 
+#include "printf.h"
+
+void putch(void *p, char c) {
+  (void)p;
+  usb_debug_putchar(c);
+}
+
 /*
  * Button thread
  *
@@ -55,9 +62,10 @@ static THD_FUNCTION(buttonThread, arg) {
       chSysLock();
       if(usbGetDriverStateI(&USBD1) == USB_ACTIVE) {
         chSysUnlock();
-        print("button state is ");
-        usb_debug_putchar('0' + wkup_cur_state);
-        usb_debug_putchar('\n');
+        // print("button state is ");
+        // usb_debug_putchar('0' + wkup_cur_state);
+        // usb_debug_putchar('\n');
+        printf("button state is %08lX\n\r", wkup_cur_state);
         usb_debug_flush_output();
       } else
         chSysUnlock();
@@ -94,6 +102,8 @@ int main(void) {
   /* ChibiOS/RT init */
   halInit();
   chSysInit();
+
+  init_printf(NULL,putch);
 
   palSetPad(GPIOC, GPIOC_LED_BLUE);
   chThdSleepMilliseconds(400);
