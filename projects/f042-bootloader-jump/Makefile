@@ -205,10 +205,10 @@ CPPWARN = -Wall -Wextra -Wundef
 #
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS = -DBOOTLOADER_ADDRESS=0x1FFFC400
+UDEFS =
 
 # Define ASM defines here
-UADEFS =
+UADEFS = -DBOOTLOADER_ADDRESS=0x1FFFC400
 
 # List all user directories here
 UINCDIR =
@@ -225,5 +225,4 @@ ULIBS =
 
 RULESPATH = $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC
 include $(RULESPATH)/rules.mk
-
 include $(ROOTDIR)/common.mk

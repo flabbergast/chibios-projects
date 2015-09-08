@@ -23,7 +23,7 @@
 #include "ch.h"
 #include "hal.h"
 
-#ifdef BOOTLOADER_ADDRESS
+/* Make sure to pass the correct BOOTLOADER_ADDRESS in Makefile!! */
 #define SYMVAL(sym) (uint32_t)(((uint8_t *)&(sym)) - ((uint8_t *)0))
 extern uint32_t __ram0_end__;
 
@@ -31,9 +31,6 @@ void jump_to_bootloader(void) {
   *((unsigned long *)(SYMVAL(__ram0_end__) - 4)) = 0xDEADBEEF; // set magic flag => reset handler will jump into boot loader
    NVIC_SystemReset();
 }
-#else
-#error "You need to pass the correct BOOTLOADER_ADDRESS to the compiler in Makefile."
-#endif
 
 /*
  * Amber LED blinker thread, times are in milliseconds.
