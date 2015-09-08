@@ -48,7 +48,7 @@ static THD_FUNCTION(buttonThread, arg) {
     wkup_cur_state = palReadPad(GPIOA, GPIOA_BUTTON);
     if(wkup_cur_state != wkup_old_state) {
       chSysLock();
-      if(usbGetDriverStateI(&USBD1) == USB_ACTIVE) {
+      if(usbGetDriverStateI(&USB_DRIVER) == USB_ACTIVE) {
         chSysUnlock();
         /* just some test code for various reports
          * choose one and comment the others
@@ -119,7 +119,7 @@ static THD_FUNCTION(blinkerThread, arg) {
   chRegSetThreadName("blinkerThread");
 
   while(true) {
-    systime_t time = USBD1.state == USB_ACTIVE ? 250 : 500;
+    systime_t time = USB_DRIVER.state == USB_ACTIVE ? 250 : 500;
     palClearPad(GPIOC, GPIOC_LED_BLUE);
     chThdSleepMilliseconds(time);
     palSetPad(GPIOC, GPIOC_LED_BLUE);
@@ -140,13 +140,13 @@ int main(void) {
   palClearPad(GPIOC, GPIOC_LED_BLUE);
 
   /* Init USB */
-  init_usb_driver();
+  init_usb_driver(&USB_DRIVER);
 
   /* Start blinking */
   chThdCreateStatic(waBlinkerThread, sizeof(waBlinkerThread), NORMALPRIO, blinkerThread, NULL);
 
   /* Wait until the USB is active */
-  while(USBD1.state != USB_ACTIVE)
+  while(USB_DRIVER.state != USB_ACTIVE)
     chThdSleepMilliseconds(1000);
 
   chThdSleepMilliseconds(500);

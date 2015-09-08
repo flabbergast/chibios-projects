@@ -47,7 +47,7 @@
 #define USB_DRIVER USBD1
 
 /* Initialize the USB driver and bus */
-void init_usb_driver(void);
+void init_usb_driver(USBDriver *usbp);
 
 /* ---------------
  * Keyboard header
@@ -82,7 +82,7 @@ void kbd_sof_cb(USBDriver *usbp);
 #ifdef NKRO_ENABLE
 /* nkro IN callback hander */
 void nkro_in_cb(USBDriver *usbp, usbep_t ep);
-#endif
+#endif /* NKRO_ENABLE */
 
 /* ------------
  * Mouse header
@@ -97,7 +97,7 @@ void nkro_in_cb(USBDriver *usbp, usbep_t ep);
 
 /* mouse IN request callback handler */
 void mouse_in_cb(USBDriver *usbp, usbep_t ep);
-#endif
+#endif /* MOUSE_ENABLE */
 
 /* ---------------
  * Extrakey header
@@ -118,7 +118,7 @@ typedef struct {
   uint8_t report_id;
   uint16_t usage;
 } __attribute__ ((packed)) report_extra_t;
-#endif
+#endif /* EXTRAKEY_ENABLE */
 
 /* --------------
  * Console header
@@ -146,7 +146,7 @@ void console_flush_output(void);
 
 /* console IN request callback handler */
 void console_in_cb(USBDriver *usbp, usbep_t ep);
-#endif
+#endif /* CONSOLE_ENABLE */
 
 /* ---------------------------
  * Host driver functions (TMK)
@@ -158,4 +158,5 @@ void send_keyboard(report_keyboard_t *report);
 void send_mouse(report_mouse_t *report);
 void send_system(uint16_t data);
 void send_consumer(uint16_t data);
+
 #endif /* _USB_MAIN_H_ */
