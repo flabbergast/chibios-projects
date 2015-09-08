@@ -20,13 +20,7 @@
 
 #include "usb_main.h"
 
-report_keyboard_t report = {
-#ifdef NKRO_ENABLE
-  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
-#else
-  { 0, 0, 0, 0, 0, 0, 0, 0 }
-#endif
-};
+report_keyboard_t report = {{0}};
 
 #ifdef MOUSE_ENABLE
 report_mouse_t mouse_report = {

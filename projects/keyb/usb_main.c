@@ -873,7 +873,9 @@ static bool usb_request_hook_cb(USBDriver *usbp) {
           if(keyboard_idle) {
 #endif /* NKRO_ENABLE */
           /* arm the idle timer if boot protocol & idle */
-            chVTSet(&keyboard_idle_timer, 4*MS2ST(keyboard_idle), keyboard_idle_timer_cb, NULL);
+            osalSysLockFromISR();
+            chVTSetI(&keyboard_idle_timer, 4*MS2ST(keyboard_idle), keyboard_idle_timer_cb, NULL);
+            osalSysUnlockFromISR();
           }
         }
         usbSetupTransfer(usbp, NULL, 0, NULL);
@@ -888,7 +890,9 @@ static bool usb_request_hook_cb(USBDriver *usbp) {
 #else /* NKRO_ENABLE */
         if(keyboard_idle) {
 #endif /* NKRO_ENABLE */
-          chVTSet(&keyboard_idle_timer, 4*MS2ST(keyboard_idle), keyboard_idle_timer_cb, NULL);
+          osalSysLockFromISR();
+          chVTSetI(&keyboard_idle_timer, 4*MS2ST(keyboard_idle), keyboard_idle_timer_cb, NULL);
+          osalSysUnlockFromISR();
         }
         usbSetupTransfer(usbp, NULL, 0, NULL);
         return TRUE;
