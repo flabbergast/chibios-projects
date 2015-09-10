@@ -57,15 +57,15 @@ void init_usb_driver(USBDriver *usbp);
 /* main keyboard (6kro) */
 #define KBD_INTERFACE   0
 #define KBD_ENDPOINT    1
-#define KBD_SIZE        8
-#define KBD_REPORT_KEYS   (KBD_SIZE - 2)
+#define KBD_EPSIZE      8
+#define KBD_REPORT_KEYS (KBD_EPSIZE - 2)
 
 /* secondary keyboard */
 #ifdef NKRO_ENABLE
 #define NKRO_INTERFACE    4
 #define NKRO_ENDPOINT     5
-#define NKRO_SIZE         16
-#define NKRO_REPORT_KEYS  (NKRO_SIZE - 1)
+#define NKRO_EPSIZE       16
+#define NKRO_REPORT_KEYS  (NKRO_EPSIZE - 1)
 #endif
 
 /* this defines report_keyboard_t and computes REPORT_SIZE defines */
@@ -93,7 +93,7 @@ void nkro_in_cb(USBDriver *usbp, usbep_t ep);
 
 #define MOUSE_INTERFACE         1
 #define MOUSE_ENDPOINT          2
-#define MOUSE_SIZE              8
+#define MOUSE_EPSIZE            8
 
 /* mouse IN request callback handler */
 void mouse_in_cb(USBDriver *usbp, usbep_t ep);
@@ -108,7 +108,7 @@ void mouse_in_cb(USBDriver *usbp, usbep_t ep);
 
 #define EXTRA_INTERFACE         3
 #define EXTRA_ENDPOINT          4
-#define EXTRA_SIZE              8
+#define EXTRA_EPSIZE            8
 
 /* extrakey IN request callback handler */
 void extra_in_cb(USBDriver *usbp, usbep_t ep);
@@ -129,11 +129,11 @@ typedef struct {
 
 #define CONSOLE_INTERFACE      2
 #define CONSOLE_ENDPOINT       3
-#define CONSOLE_SIZE           16
+#define CONSOLE_EPSIZE         16
 
 /* Number of IN reports that can be stored inside the output queue */
 #define CONSOLE_QUEUE_CAPACITY 2
-#define CONSOLE_QUEUE_BUFFER_SIZE (CONSOLE_QUEUE_CAPACITY * CONSOLE_SIZE)
+#define CONSOLE_QUEUE_BUFFER_SIZE (CONSOLE_QUEUE_CAPACITY * CONSOLE_EPSIZE)
 
 /* Console flush time */
 #define CONSOLE_FLUSH_MS 50

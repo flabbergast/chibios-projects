@@ -243,7 +243,7 @@ static const uint8_t console_hid_report_desc_data[] = {
   0x75, 0x08,       // report size = 8 bits
   0x15, 0x00,       // logical minimum = 0
   0x26, 0xFF, 0x00, // logical maximum = 255
-  0x95, CONSOLE_SIZE, // report count
+  0x95, CONSOLE_EPSIZE, // report count
   0x09, 0x75,       // usage
   0x81, 0x02,       // Input (array)
   0xC0              // end collection
@@ -367,7 +367,7 @@ static const uint8_t hid_configuration_descriptor_data[] = {
   /* Endpoint Descriptor (7 bytes) USB spec 9.6.6, page 269-271, Table 9-13 */
   USB_DESC_ENDPOINT(KBD_ENDPOINT | 0x80,  // bEndpointAddress
                     0x03,      // bmAttributes (Interrupt)
-                    KBD_SIZE,  // wMaxPacketSize
+                    KBD_EPSIZE,// wMaxPacketSize
                     10),       // bInterval
 
   #ifdef MOUSE_ENABLE
@@ -397,7 +397,7 @@ static const uint8_t hid_configuration_descriptor_data[] = {
   /* Endpoint Descriptor (7 bytes) USB spec 9.6.6, page 269-271, Table 9-13 */
   USB_DESC_ENDPOINT(MOUSE_ENDPOINT | 0x80,  // bEndpointAddress
                     0x03,      // bmAttributes (Interrupt)
-                    MOUSE_SIZE,  // wMaxPacketSize
+                    MOUSE_EPSIZE,  // wMaxPacketSize
                     1),        // bInterval
   #endif /* MOUSE_ENABLE */
 
@@ -423,7 +423,7 @@ static const uint8_t hid_configuration_descriptor_data[] = {
   /* Endpoint Descriptor (7 bytes) USB spec 9.6.6, page 269-271, Table 9-13 */
   USB_DESC_ENDPOINT(CONSOLE_ENDPOINT | 0x80,  // bEndpointAddress
                     0x03,      // bmAttributes (Interrupt)
-                    CONSOLE_SIZE, // wMaxPacketSize
+                    CONSOLE_EPSIZE, // wMaxPacketSize
                     1),        // bInterval
   #endif /* CONSOLE_ENABLE */
 
@@ -449,7 +449,7 @@ static const uint8_t hid_configuration_descriptor_data[] = {
   /* Endpoint Descriptor (7 bytes) USB spec 9.6.6, page 269-271, Table 9-13 */
   USB_DESC_ENDPOINT(EXTRA_ENDPOINT | 0x80,  // bEndpointAddress
                     0x03,      // bmAttributes (Interrupt)
-                    EXTRA_SIZE, // wMaxPacketSize
+                    EXTRA_EPSIZE, // wMaxPacketSize
                     10),       // bInterval
   #endif /* EXTRAKEY_ENABLE */
 
@@ -475,7 +475,7 @@ static const uint8_t hid_configuration_descriptor_data[] = {
   /* Endpoint Descriptor (7 bytes) USB spec 9.6.6, page 269-271, Table 9-13 */
   USB_DESC_ENDPOINT(NKRO_ENDPOINT | 0x80,  // bEndpointAddress
                     0x03,      // bmAttributes (Interrupt)
-                    NKRO_SIZE, // wMaxPacketSize
+                    NKRO_EPSIZE, // wMaxPacketSize
                     1),       // bInterval
   #endif /* NKRO_ENABLE */
 };
@@ -640,7 +640,7 @@ static const USBEndpointConfig kbd_ep_config = {
   NULL,                         /* SETUP packet notification callback */
   kbd_in_cb,                    /* IN notification callback */
   NULL,                         /* OUT notification callback */
-  KBD_SIZE,                     /* IN maximum packet size */
+  KBD_EPSIZE,                   /* IN maximum packet size */
   0,                            /* OUT maximum packet size */
   &kbd_ep_state,                /* IN Endpoint state */
   NULL,                         /* OUT endpoint state */
@@ -658,7 +658,7 @@ static const USBEndpointConfig mouse_ep_config = {
   NULL,                         /* SETUP packet notification callback */
   mouse_in_cb,                  /* IN notification callback */
   NULL,                         /* OUT notification callback */
-  MOUSE_SIZE,                   /* IN maximum packet size */
+  MOUSE_EPSIZE,                 /* IN maximum packet size */
   0,                            /* OUT maximum packet size */
   &mouse_ep_state,              /* IN Endpoint state */
   NULL,                         /* OUT endpoint state */
@@ -677,7 +677,7 @@ static const USBEndpointConfig console_ep_config = {
   NULL,                         /* SETUP packet notification callback */
   console_in_cb,                /* IN notification callback */
   NULL,                         /* OUT notification callback */
-  CONSOLE_SIZE,                 /* IN maximum packet size */
+  CONSOLE_EPSIZE,               /* IN maximum packet size */
   0,                            /* OUT maximum packet size */
   &console_ep_state,            /* IN Endpoint state */
   NULL,                         /* OUT endpoint state */
@@ -696,7 +696,7 @@ static const USBEndpointConfig extra_ep_config = {
   NULL,                         /* SETUP packet notification callback */
   extra_in_cb,                  /* IN notification callback */
   NULL,                         /* OUT notification callback */
-  EXTRA_SIZE,                   /* IN maximum packet size */
+  EXTRA_EPSIZE,                 /* IN maximum packet size */
   0,                            /* OUT maximum packet size */
   &extra_ep_state,              /* IN Endpoint state */
   NULL,                         /* OUT endpoint state */
@@ -715,7 +715,7 @@ static const USBEndpointConfig nkro_ep_config = {
   NULL,                         /* SETUP packet notification callback */
   nkro_in_cb,                   /* IN notification callback */
   NULL,                         /* OUT notification callback */
-  NKRO_SIZE,                    /* IN maximum packet size */
+  NKRO_EPSIZE,                  /* IN maximum packet size */
   0,                            /* OUT maximum packet size */
   &nkro_ep_state,               /* IN Endpoint state */
   NULL,                         /* OUT endpoint state */
@@ -1140,9 +1140,9 @@ void console_in_cb(USBDriver *usbp, usbep_t ep) {
   chVTSetI(&console_flush_timer, MS2ST(CONSOLE_FLUSH_MS), console_flush_cb, (void *)usbp);
 
   /* Check if there is data to send left in the output queue */
-  if(chOQGetFullI(&console_queue) >= CONSOLE_SIZE) {
+  if(chOQGetFullI(&console_queue) >= CONSOLE_EPSIZE) {
     osalSysUnlockFromISR();
-    usbPrepareQueuedTransmit(usbp, CONSOLE_ENDPOINT, &console_queue, CONSOLE_SIZE);
+    usbPrepareQueuedTransmit(usbp, CONSOLE_ENDPOINT, &console_queue, CONSOLE_EPSIZE);
     osalSysLockFromISR();
     usbStartTransmitI(usbp, CONSOLE_ENDPOINT);
   }
@@ -1159,9 +1159,9 @@ void console_queue_onotify(io_queue_t *qp) {
     return;
 
   if(!usbGetTransmitStatusI(usbp, CONSOLE_ENDPOINT)
-     && (chOQGetFullI(&console_queue) >= CONSOLE_SIZE)) {
+     && (chOQGetFullI(&console_queue) >= CONSOLE_EPSIZE)) {
     osalSysUnlock();
-    usbPrepareQueuedTransmit(usbp, CONSOLE_ENDPOINT, &console_queue, CONSOLE_SIZE);
+    usbPrepareQueuedTransmit(usbp, CONSOLE_ENDPOINT, &console_queue, CONSOLE_EPSIZE);
     osalSysLock();
     usbStartTransmitI(usbp, CONSOLE_ENDPOINT);
   }
@@ -1172,7 +1172,7 @@ void console_queue_onotify(io_queue_t *qp) {
 static void console_flush_cb(void *arg) {
   USBDriver *usbp = (USBDriver *)arg;
   size_t i, n;
-  uint8_t buf[CONSOLE_SIZE]; /* TODO: a solution without extra buffer? */
+  uint8_t buf[CONSOLE_EPSIZE]; /* TODO: a solution without extra buffer? */
   osalSysLockFromISR();
 
   /* check that the states of things are as they're supposed to */
@@ -1184,7 +1184,7 @@ static void console_flush_cb(void *arg) {
   }
 
   /* don't do anything if the queue is empty or has enough stuff in it */
-  if(((n = oqGetFullI(&console_queue)) == 0) || (n >= CONSOLE_SIZE)) {
+  if(((n = oqGetFullI(&console_queue)) == 0) || (n >= CONSOLE_EPSIZE)) {
     /* rearm the timer */
     chVTSetI(&console_flush_timer, MS2ST(CONSOLE_FLUSH_MS), console_flush_cb, (void *)usbp);
     osalSysUnlockFromISR();
@@ -1194,10 +1194,10 @@ static void console_flush_cb(void *arg) {
   /* there's stuff hanging in the queue - so dequeue and send */
   for(i = 0; i < n; i++)
     buf[i] = (uint8_t)oqGetI(&console_queue);
-  for(i = n; i < CONSOLE_SIZE; i++)
+  for(i = n; i < CONSOLE_EPSIZE; i++)
     buf[i] = 0;
   osalSysUnlockFromISR();
-  usbPrepareTransmit(usbp, CONSOLE_ENDPOINT, buf, CONSOLE_SIZE);
+  usbPrepareTransmit(usbp, CONSOLE_ENDPOINT, buf, CONSOLE_EPSIZE);
   osalSysLockFromISR();
   (void)usbStartTransmitI(usbp, CONSOLE_ENDPOINT);
 
