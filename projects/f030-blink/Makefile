@@ -82,7 +82,9 @@ PROJECT = ch
 
 MCU_FAMILY = STM32
 MCU_SERIES = STM32F0xx
-MCU_MODEL_FAMILY = STM32F030x4
+MCU_STARTUP = stm32f0xx
+MCU_LDSCRIPT = STM32F030x4
+ARMV = 6
 BOARD = STM32F030_BREAKOUT
 
 ROOTDIR = ../..
@@ -90,7 +92,7 @@ ROOTDIR = ../..
 # Imported source files and paths
 CHIBIOS = $(ROOTDIR)/chibios
 # Startup files.
-include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/startup_$(shell echo $(MCU_SERIES) | tr '[:upper:]' '[:lower:]').mk
+include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/startup_$(MCU_STARTUP).mk
 # HAL-OSAL files (optional).
 include $(CHIBIOS)/os/hal/hal.mk
 include $(CHIBIOS)/os/hal/ports/$(MCU_FAMILY)/$(MCU_SERIES)/platform.mk
@@ -102,14 +104,14 @@ endif
 include $(CHIBIOS)/os/hal/osal/rt/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
-include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk
+include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_v$(ARMV)m.mk
 # Other files (optional).
 
 # Define linker script file here
-ifneq ("$(wildcard $(ROOTDIR)/ld/$(MCU_MODEL_FAMILY).ld)","")
-LDSCRIPT = $(ROOTDIR)/ld/$(MCU_MODEL_FAMILY).ld
+ifneq ("$(wildcard $(ROOTDIR)/ld/$(MCU_LDSCRIPT).ld)","")
+LDSCRIPT = $(ROOTDIR)/ld/$(MCU_LDSCRIPT).ld
 else
-LDSCRIPT = $(STARTUPLD)/$(MCU_MODEL_FAMILY).ld
+LDSCRIPT = $(STARTUPLD)/$(MCU_LDSCRIPT).ld
 endif
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global

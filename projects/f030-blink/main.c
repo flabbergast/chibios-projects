@@ -28,6 +28,9 @@
 
 #include "chprintf.h"
 
+#define LED_GPIO GPIOA
+#define LED_PIN GPIOA_LED_AMBER
+
 /*
  * Amber LED blinker thread, times are in milliseconds.
  */
@@ -36,10 +39,10 @@ static THD_FUNCTION(Thread1, arg) {
   (void)arg;
   chRegSetThreadName("blinker");
   while(true) {
-    palClearPad(GPIOA, GPIOA_LED_AMBER);
+    palClearPad(LED_GPIO, LED_PIN);
     palSetPad(GPIOA, GPIOA_PIN5);
     chThdSleepMilliseconds(500);
-    palSetPad(GPIOA, GPIOA_LED_AMBER);
+    palSetPad(LED_GPIO, LED_PIN);
     palClearPad(GPIOA, GPIOA_PIN5);
     chThdSleepMilliseconds(500);
   }
