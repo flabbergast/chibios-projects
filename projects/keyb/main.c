@@ -55,16 +55,16 @@ static THD_FUNCTION(buttonThread, arg) {
          */
 
         /* keyboard test, sends 'n' in nkro mode, 'm' in normal mode */
-// #ifdef NKRO_ENABLE
-//         if(wkup_cur_state) {
-//           report.nkro.bits[2] |= 2; // 'n'
-//         } else {
-//           report.nkro.bits[2] &= 0b11111101;
-//         }
-// #else
-//         report.keys[0] = (wkup_cur_state ? 0x10 : 0); // 'm'
-// #endif
-//         send_keyboard(&report);
+#ifdef NKRO_ENABLE
+        if(wkup_cur_state) {
+          report.nkro.bits[2] |= 2; // 'n'
+        } else {
+          report.nkro.bits[2] &= 0b11111101;
+        }
+#else
+        report.keys[0] = (wkup_cur_state ? 0x10 : 0); // 'm'
+#endif
+        send_keyboard(&report);
 
         /* mouse test, moves the mouse pointer diagonally right and down */
         // send_mouse(&mouse_report);
