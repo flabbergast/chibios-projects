@@ -22,6 +22,17 @@
 #include "ch.h"
 #include "hal.h"
 
+#ifdef BOARD_PJRC_TEENSY_LC
+ #define GPIO_LED_GREEN TEENSY_PIN13_IOPORT
+ #define PIN_LED_GREEN  TEENSY_PIN13
+ #define GPIO_LED_RED   TEENSY_PIN11_IOPORT
+ #define PIN_LED_RED    TEENSY_PIN11
+ #define GPIO_LED_BLUE  TEENSY_PIN12_IOPORT
+ #define PIN_LED_BLUE   TEENSY_PIN12
+ #define GPIO_BUTTON    TEENSY_PIN2_IOPORT
+ #define PIN_BUTTON     TEENSY_PIN2
+#endif
+
 /* Mac OS-X and Linux automatically load the correct drivers.  On
  * Windows, even though the driver is supplied by Microsoft, an
  * INF file is needed to load the driver.  These numbers need to
@@ -48,6 +59,9 @@
 
 /* Initialize the USB driver and bus */
 void init_usb_driver(USBDriver *usbp);
+
+/* Send remote wakeup packet */
+void send_remote_wakeup(USBDriver *usbp);
 
 /* ---------------
  * Keyboard header

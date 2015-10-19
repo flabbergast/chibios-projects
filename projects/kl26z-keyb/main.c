@@ -135,6 +135,15 @@ SerialConfig s0cfg = {
 };
 #endif /* DEBUG_USB */
 
+/* for remote wakeup */
+bool suspend_wakeup_condition(void) {
+  if(palReadPad(GPIO_BUTTON, PIN_BUTTON) == PAL_LOW) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 /* Main thread
  */
 int main(void) {
@@ -142,10 +151,15 @@ int main(void) {
   halInit();
   chSysInit();
 
+#if defined(BOARD_PJRC_TEENSY_LC)
+  palSetPadMode(GPIO_BUTTON, PIN_BUTTON, PAL_MODE_INPUT_PULLUP);
+#else /* BOARD_PJRC_TEENSY_LC */
+  /* Turn off the LEDS on FRDM-KL26Z */
   palSetPad(GPIO_LED_RED, PIN_LED_RED);
   palSetPad(GPIO_LED_GREEN, PIN_LED_GREEN);
   chThdSleepMilliseconds(400);
   palSetPad(GPIO_LED_BLUE, PIN_LED_BLUE);
+#endif /* BOARD_PJRC_TEENSY_LC */
 
 #if defined(DEBUG_USB)
   sdStart(&SD1, &s0cfg);
@@ -174,6 +188,24 @@ int main(void) {
   while(true) {
     chThdSleepMilliseconds(200);
     /* caps lock led status */
+    #if defined(BOARD_PJRC_TEENSY_LC)
+    palWritePad(GPIO_LED_GREEN, PIN_LED_GREEN, ((keyboard_leds() & 2) == 2));
+    #else /* BOARD_PJRC_TEENSY_LC */
     palWritePad(GPIO_LED_RED, PIN_LED_RED, ((keyboard_leds() & 2) != 2));
+    #endif
+
+    if(USB_DRIVER.state == USB_SUSPENDED) {
+      /* Suspended */
+      while(USB_DRIVER.state == USB_SUSPENDED) {
+        /* Do this in the suspended state */
+        chThdSleepMilliseconds(50);
+        /* Remote wakeup */
+        if((USB_DRIVER.status & 2) && suspend_wakeup_condition()) {
+          send_remote_wakeup(&USB_DRIVER);
+        }
+        
+      }
+      /* Woken up */
+    }
   }
 }

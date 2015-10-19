@@ -349,8 +349,8 @@ static const uint8_t hid_configuration_descriptor_data[] = {
                          NUM_INTERFACES,    // bNumInterfaces
                          1,    // bConfigurationValue
                          0,    // iConfiguration
-                         0xA0, // bmAttributes
-                         50),  // bMaxPower (100mA)
+                         0xA0, // bmAttributes (RESERVED|REMOTEWAKEUP)
+                         50),  // bMaxPower (50mA)
 
   /* Interface Descriptor (9 bytes) USB spec 9.6.5, page 267-269, Table 9-12 */
   USB_DESC_INTERFACE(KBD_INTERFACE,        // bInterfaceNumber
@@ -766,9 +766,19 @@ static void usb_event_cb(USBDriver *usbp, usbevent_t event) {
     return;
 
   case USB_EVENT_SUSPEND:
+#if defined(BOARD_PJRC_TEENSY_LC)
+    palSetPad(GPIO_LED_GREEN, PIN_LED_GREEN);
+#else /* BOARD_PJRC_TEENSY_LC */
+    palClearPad(GPIO_LED_GREEN, PIN_LED_GREEN);
+#endif /* BOARD_PJRC_TEENSY_LC */
     return;
 
   case USB_EVENT_WAKEUP:
+#if defined(BOARD_PJRC_TEENSY_LC)
+    palClearPad(GPIO_LED_GREEN, PIN_LED_GREEN);
+#else /* BOARD_PJRC_TEENSY_LC */
+    palSetPad(GPIO_LED_GREEN, PIN_LED_GREEN);
+#endif /* BOARD_PJRC_TEENSY_LC */
     return;
 
   case USB_EVENT_STALLED:
@@ -984,6 +994,23 @@ void init_usb_driver(USBDriver *usbp) {
   oqObjectInit(&console_queue, console_queue_buffer, sizeof(console_queue_buffer), console_queue_onotify, (void *)usbp);
   chVTObjectInit(&console_flush_timer);
 #endif
+}
+
+/*
+ * Send remote wakeup packet
+ * Note: should not be called from ISR
+ */
+void send_remote_wakeup(USBDriver *usbp) {
+  (void)usbp;
+#if defined(K20x) || defined(KL2x)
+#if KINETIS_USB_USE_USB0
+  USB0->CTL |= USBx_CTL_RESUME;
+  chThdSleepMilliseconds(15);
+  USB0->CTL &= ~USBx_CTL_RESUME;
+#endif /* KINETIS_USB_USE_USB0 */
+#else /* K20x || KL2x */
+#warning Sending remote wakeup packet not implemented for your platform.
+#endif /* K20x || KL2x */
 }
 
 /* ---------------------------------------------------------
