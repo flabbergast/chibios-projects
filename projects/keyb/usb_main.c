@@ -349,8 +349,8 @@ static const uint8_t hid_configuration_descriptor_data[] = {
                          NUM_INTERFACES,    // bNumInterfaces
                          1,    // bConfigurationValue
                          0,    // iConfiguration
-                         0xA0, // bmAttributes
-                         50),  // bMaxPower (100mA)
+                         0xA0, // bmAttributes (RESERVED|REMOTEWAKEUP)
+                         50),  // bMaxPower (50mA)
 
   /* Interface Descriptor (9 bytes) USB spec 9.6.5, page 267-269, Table 9-12 */
   USB_DESC_INTERFACE(KBD_INTERFACE,        // bInterfaceNumber
@@ -1062,19 +1062,26 @@ void send_keyboard(report_keyboard_t *report) {
   }
   osalSysUnlock();
 
+  bool ep_not_ready;
 #ifdef NKRO_ENABLE
   if(keyboard_nkro) {  /* NKRO protocol */
     usbPrepareTransmit(&USB_DRIVER, NKRO_ENDPOINT, (uint8_t *)report, sizeof(report_keyboard_t));
-    osalSysLock();
-    usbStartTransmitI(&USB_DRIVER, NKRO_ENDPOINT);
-    osalSysUnlock();
+    /* need to wait until the previous packet has made it through */
+    do {
+        osalSysLock();
+        ep_not_ready = usbStartTransmitI(&USB_DRIVER, NKRO_ENDPOINT);
+        osalSysUnlock();
+    } while (ep_not_ready);
   } else
 #endif /* NKRO_ENABLE */
   { /* boot protocol */
-    usbPrepareTransmit(&USB_DRIVER, KBD_ENDPOINT, (uint8_t *)report, sizeof(report_keyboard_t));
-    osalSysLock();
-    usbStartTransmitI(&USB_DRIVER, KBD_ENDPOINT);
-    osalSysUnlock();
+    usbPrepareTransmit(&USB_DRIVER, KBD_ENDPOINT, (uint8_t *)report, KBD_EPSIZE);
+    /* need to wait until the previous packet has made it through */
+    do {
+        osalSysLock();
+        ep_not_ready = usbStartTransmitI(&USB_DRIVER, KBD_ENDPOINT);
+        osalSysUnlock();
+    } while (ep_not_ready);
   }
   keyboard_report_sent = *report;
 }
