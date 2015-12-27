@@ -25,6 +25,11 @@
 
 #define PWM_DRIVER PWMD3 /* on timer 3 */
 
+#define BUTTON_GPIO GPIOA
+#define BUTTON_PIN GPIOA_BUTTON
+#define BUTTON_MODE
+#define BUTTON_ACTIVE PAL_HIGH
+
 /* PWM config structure */
 static const PWMConfig pwmcfg = {
   500000,                                /* 500kHz PWM clock frequency.  */
@@ -83,12 +88,12 @@ static THD_FUNCTION(ButtonThread, arg) {
   uint8_t newstate, state = PAL_LOW;
 
   while(true) {
-    if(palReadPad(GPIOA, GPIOA_BUTTON) != state) {
+    if(palReadPad(BUTTON_GPIO, BUTTON_PIN) != state) {
       chThdSleepMilliseconds(20); /* debounce */
-      newstate = palReadPad(GPIOA, GPIOA_BUTTON);
+      newstate = palReadPad(BUTTON_GPIO, BUTTON_PIN);
       if(newstate != state) {
         state = newstate;
-        if(newstate == PAL_HIGH) {
+        if(newstate == BUTTON_ACTIVE) {
           table_pos = (table_pos + 120)%TABLE_SIZE;
         }
       }
