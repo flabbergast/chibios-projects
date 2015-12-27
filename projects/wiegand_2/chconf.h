@@ -46,7 +46,11 @@
  * @details Frequency of the system timer that drives the system ticks. This
  *          setting also defines the system tick time unit.
  */
+#if defined(TEENSY30) || defined(MCHCK)
 #define CH_CFG_ST_FREQUENCY                 1000
+#elif defined(F042)
+#define CH_CFG_ST_FREQUENCY                 10000
+#endif
 
 /**
  * @brief   Time delta constant for the tick-less mode.
@@ -56,7 +60,11 @@
  *          The value one is not valid, timeouts are rounded up to
  *          this value.
  */
+#if defined(TEENSY30) || defined(MCHCK)
 #define CH_CFG_ST_TIMEDELTA                 0
+#elif defined(F042)
+#define CH_CFG_ST_TIMEDELTA                 2
+#endif
 
 /** @} */
 
@@ -79,7 +87,11 @@
  * @note    The round robin preemption is not supported in tickless mode and
  *          must be set to zero in that case.
  */
+#if defined(TEENSY30) || defined(MCHCK)
 #define CH_CFG_TIME_QUANTUM                 20
+#elif defined(F042)
+#define CH_CFG_TIME_QUANTUM                 0
+#endif
 
 /**
  * @brief   Managed RAM size.
@@ -333,7 +345,8 @@
  *
  * @note    The default is @p FALSE.
  */
-#define CH_DBG_SYSTEM_STATE_CHECK           TRUE
+// #define CH_DBG_SYSTEM_STATE_CHECK           TRUE
+#define CH_DBG_SYSTEM_STATE_CHECK           FALSE
 
 /**
  * @brief   Debug option, parameters checks.
@@ -342,7 +355,8 @@
  *
  * @note    The default is @p FALSE.
  */
-#define CH_DBG_ENABLE_CHECKS                TRUE
+// #define CH_DBG_ENABLE_CHECKS                TRUE
+#define CH_DBG_ENABLE_CHECKS                FALSE
 
 /**
  * @brief   Debug option, consistency checks.
@@ -352,7 +366,8 @@
  *
  * @note    The default is @p FALSE.
  */
-#define CH_DBG_ENABLE_ASSERTS               TRUE
+// #define CH_DBG_ENABLE_ASSERTS               TRUE
+#define CH_DBG_ENABLE_ASSERTS               FALSE
 
 /**
  * @brief   Debug option, trace buffer.
@@ -361,7 +376,8 @@
  *
  * @note    The default is @p FALSE.
  */
-#define CH_DBG_ENABLE_TRACE                 TRUE
+// #define CH_DBG_ENABLE_TRACE                 TRUE
+#define CH_DBG_ENABLE_TRACE                 FALSE
 
 /**
  * @brief   Debug option, stack checks.
@@ -373,7 +389,8 @@
  * @note    The default failure mode is to halt the system with the global
  *          @p panic_msg variable set to @p NULL.
  */
-#define CH_DBG_ENABLE_STACK_CHECK           TRUE
+// #define CH_DBG_ENABLE_STACK_CHECK           TRUE
+#define CH_DBG_ENABLE_STACK_CHECK           FALSE
 
 /**
  * @brief   Debug option, stacks initialization.
@@ -383,7 +400,8 @@
  *
  * @note    The default is @p FALSE.
  */
-#define CH_DBG_FILL_THREADS                 TRUE
+// #define CH_DBG_FILL_THREADS                 TRUE
+#define CH_DBG_FILL_THREADS                 FALSE
 
 /**
  * @brief   Debug option, threads profiling.

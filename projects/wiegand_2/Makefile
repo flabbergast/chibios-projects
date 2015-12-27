@@ -85,17 +85,29 @@ endif
 # Define project name here
 PROJECT = ch
 
-# TARGET = TEENSY
-TARGET = MCHCK
-# TARGET = F042
+# TARGET = TEENSY30
+# TARGET = TEENSY32
+# TARGET = MCHCK
+TARGET = F042
 
-ifeq ($(TARGET),TEENSY)
+ifeq ($(TARGET),TEENSY30)
 MCU_FAMILY = KINETIS
 MCU_SERIES = K20x
 MCU_STARTUP = k20x5
 ARMV = 7
+MCU  = cortex-m4
 MCU_LDSCRIPT = MK20DX128
 BOARD = PJRC_TEENSY_3
+endif
+
+ifeq ($(TARGET),TEENSY32)
+MCU_FAMILY = KINETIS
+MCU_SERIES = K20x
+MCU_STARTUP = k20x7
+ARMV = 7
+MCU  = cortex-m4
+MCU_LDSCRIPT = MK20DX256
+BOARD = PJRC_TEENSY_3_1
 endif
 
 ifeq ($(TARGET),MCHCK)
@@ -103,6 +115,7 @@ MCU_FAMILY = KINETIS
 MCU_SERIES = K20x
 MCU_STARTUP = k20x5
 ARMV = 7
+MCU  = cortex-m4
 MCU_LDSCRIPT = MK20DX128BLDR4
 BOARD = MCHCK_K20
 endif
@@ -112,6 +125,7 @@ MCU_FAMILY = STM32
 MCU_SERIES = STM32F0xx
 MCU_STARTUP = stm32f0xx
 ARMV = 6
+MCU  = cortex-m0
 MCU_LDSCRIPT = STM32F042x4
 BOARD = STM32F042_BREAKOUT
 endif
@@ -135,7 +149,6 @@ include $(CHIBIOS)/os/hal/osal/rt/osal.mk
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_v$(ARMV)m.mk
 # Other files (optional).
-include $(CHIBIOS)/test/rt/test.mk
 
 # Define linker script file here
 ifneq ("$(wildcard $(ROOTDIR)/ld/$(MCU_LDSCRIPT).ld)","")
@@ -154,8 +167,7 @@ CSRC = $(STARTUPSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
        main.c \
-       $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
-       $(CHIBIOS)/os/various/shell.c
+       $(CHIBIOS)/os/hal/lib/streams/chprintf.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -195,8 +207,6 @@ INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
 ##############################################################################
 # Compiler settings
 #
-
-MCU  = cortex-m4
 
 #TRGT = arm-elf-
 TRGT = arm-none-eabi-
@@ -239,10 +249,13 @@ CPPWARN = -Wall -Wextra -Wundef
 # List all user C define here, like -D_DEBUG=1
 UDEFS = 
 
-ifeq ($(TARGET),TEENSY)
-UDEFS += -DTEENSY
+ifeq ($(TARGET),TEENSY30)
+UDEFS += -DTEENSY30
 endif
 
+ifeq ($(TARGET),TEENSY32)
+UDEFS += -DTEENSY30
+endif
 ifeq ($(TARGET),MCHCK)
 UDEFS += -DCORTEX_VTOR_INIT=0x00001000 -DMCHCK
 endif
@@ -269,3 +282,6 @@ ULIBS =
 
 RULESPATH = $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC
 include $(RULESPATH)/rules.mk
+
+include $(ROOTDIR)/common.mk
+

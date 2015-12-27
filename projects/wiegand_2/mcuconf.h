@@ -17,7 +17,7 @@
 #ifndef _MCUCONF_H_
 #define _MCUCONF_H_
 
-#if defined(TEENSY)
+#if defined(TEENSY30)
 
 #define K20x_MCUCONF
 

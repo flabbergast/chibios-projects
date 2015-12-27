@@ -29,10 +29,7 @@
 
 #include "chprintf.h"
 
-// #define TEENSY
-//#define MCHCK
-
-#if defined(TEENSY)
+#if defined(TEENSY30)
 /* Teensy */
 #define BUTTON_GPIO TEENSY_PIN2_IOPORT
 #define BUTTON_PIN TEENSY_PIN2
@@ -88,7 +85,7 @@ static const uint8_t vcom_device_descriptor_data[18] = {
                   0x00,                 /* bDeviceProtocol.                 */
                   0x40,                 /* bMaxPacketSize.                  */
                   0x0179,               /* idVendor.                        */
-#if defined(TEENSY)
+#if defined(TEENSY30)
                   0x0002,               /* idProduct.                       */
 #elif defined(MCHCK)
                   0x0003,               /* idProduct.                       */
@@ -415,7 +412,7 @@ void phex24(uint32_t c);
 void phex32(uint32_t c);
 void wieg_decode_26(uint8_t *buf, uint8_t n);
 
-#if defined(TEENSY)
+#if defined(TEENSY30)
 #define WIEG_IN_DAT0_GPIO TEENSY_PIN6_IOPORT
 #define WIEG_IN_DAT0_PORT PORTD
 #define WIEG_IN_DAT0_PIN TEENSY_PIN6
@@ -494,7 +491,7 @@ static void extcb1(EXTDriver *extp, expchannel_t channel) {
   osalSysUnlockFromISR();
 }
 
-#if defined(TEENSY) || defined(MCHCK)
+#if defined(TEENSY30) || defined(MCHCK)
 static const EXTConfig extcfg = {
   {
    {EXT_CH_MODE_FALLING_EDGE|EXT_CH_MODE_AUTOSTART, extcb0, WIEG_IN_DAT0_PORT, WIEG_IN_DAT0_PIN},
@@ -685,6 +682,15 @@ int main(void) {
    *   RTOS is active.
    */
   halInit();
+
+#if defined(F042)
+  /* This is needed to remap the USB pins PA11,PA12 onto the default PA9,PA10
+   * so that the USB works. After halInit (which changes that register).
+   * This also means that USART1 can't be used, as it is on PA9,PA10.
+   */
+  SYSCFG->CFGR1 |= SYSCFG_CFGR1_PA11_PA12_RMP;
+#endif /* F042 */
+
   chSysInit();
 
   /*
