@@ -29,3 +29,9 @@ dfu: all
 stlink: all
 	st-flash write $(BUILDDIR)/$(PROJECT).bin 0x8000000
 
+### blhost
+
+blhost: all
+	blhost -u -- flash-erase-all
+	blhost -u -- write-memory 0 $(BUILDDIR)/$(PROJECT).bin
+	blhost -u -- reset

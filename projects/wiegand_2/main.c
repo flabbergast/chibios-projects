@@ -30,7 +30,7 @@
 #include "chprintf.h"
 
 #if defined(TEENSY30)
-/* Teensy */
+/* Teensy 3.0 and 3.2*/
 #define BUTTON_GPIO TEENSY_PIN2_IOPORT
 #define BUTTON_PIN TEENSY_PIN2
 #define BUTTON_ACTIVE PAL_LOW
@@ -47,6 +47,16 @@
 #define BUTTON_MODE PAL_MODE_INPUT_PULLUP
 #define LED_GPIO GPIOB
 #define LED_PIN 16
+#endif
+
+#if defined(KL27Z)
+/* KL27Z breakout */
+#define BUTTON_GPIO GPIO_BUTTON
+#define BUTTON_PIN PIN_BUTTON
+#define BUTTON_ACTIVE PAL_LOW
+#define BUTTON_MODE PAL_MODE_INPUT_PULLUP
+#define LED_GPIO GPIO_LED
+#define LED_PIN PIN_LED
 #endif
 
 #if defined(F042)
@@ -91,6 +101,8 @@ static const uint8_t vcom_device_descriptor_data[18] = {
                   0x0003,               /* idProduct.                       */
 #elif defined(F042)
                   0x0004,               /* idProduct.                       */
+#elif defined(KL27Z)
+                  0x0005,               /* idProduct.                       */
 #else
                   0x0001,               /* idProduct.                       */
 #endif
@@ -382,6 +394,9 @@ volatile uint8_t led_blink = 0;
 static THD_WORKING_AREA(waBlinkThr, 128);
 static THD_FUNCTION(BlinkThr, arg) {
   (void)arg;
+  /* LED setup */
+  palSetPadMode(LED_GPIO, LED_PIN, PAL_MODE_OUTPUT_PUSHPULL);
+
   while(true) {
     // just periodically blink
     // systime_t time = serusbcfg.usbp->state == USB_ACTIVE ? 250 : 500;
@@ -425,6 +440,18 @@ void wieg_decode_26(uint8_t *buf, uint8_t n);
 #endif
 
 #if defined(MCHCK)
+#define WIEG_IN_DAT0_GPIO GPIOD
+#define WIEG_IN_DAT0_PORT PORTD
+#define WIEG_IN_DAT0_PIN 1
+#define WIEG_IN_DAT1_GPIO GPIOD
+#define WIEG_IN_DAT1_PORT PORTD
+#define WIEG_IN_DAT1_PIN 0
+
+#define WIEG_SHOULD_RECEIVE TRUE
+#define WIEG_PINS_MODE PAL_MODE_INPUT_PULLUP
+#endif
+
+#if defined(KL27Z)
 #define WIEG_IN_DAT0_GPIO GPIOD
 #define WIEG_IN_DAT0_PORT PORTD
 #define WIEG_IN_DAT0_PIN 1
@@ -491,7 +518,7 @@ static void extcb1(EXTDriver *extp, expchannel_t channel) {
   osalSysUnlockFromISR();
 }
 
-#if defined(TEENSY30) || defined(MCHCK)
+#if defined(TEENSY30) || defined(MCHCK) || defined(KL27Z)
 static const EXTConfig extcfg = {
   {
    {EXT_CH_MODE_FALLING_EDGE|EXT_CH_MODE_AUTOSTART, extcb0, WIEG_IN_DAT0_PORT, WIEG_IN_DAT0_PIN},
@@ -699,11 +726,6 @@ int main(void) {
   palSetPadMode(BUTTON_GPIO, BUTTON_PIN, BUTTON_MODE);
 
   /*
-   * LED setup
-   */
-  palSetPadMode(LED_GPIO, LED_PIN, PAL_MODE_OUTPUT_PUSHPULL);
-
-  /*
    * Creates the blinker thread.
    */
   chThdCreateStatic(waBlinkThr, sizeof(waBlinkThr), NORMALPRIO, BlinkThr, NULL);
@@ -737,6 +759,7 @@ int main(void) {
       // chprintf((BaseSequentialStream *)&SDU1, "Hello world\r\n");
       chnPutTimeout(&SDU1, 'W', TIME_IMMEDIATE);          
       wieg_send(wieg_test_buf, 26);
+      led_blink = 1;
       chThdSleepMilliseconds(200);
       /* chnWrite((BaseChannel *)&SDU1, (uint8_t *)"Hello, world\r\n", 14); */
     }
