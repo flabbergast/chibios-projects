@@ -320,6 +320,19 @@
  */
 /*===========================================================================*/
 
+#if defined(F042)
+
+#define CH_DBG_STATISTICS                   FALSE
+#define CH_DBG_SYSTEM_STATE_CHECK           FALSE
+#define CH_DBG_ENABLE_CHECKS                FALSE
+#define CH_DBG_ENABLE_ASSERTS               FALSE
+#define CH_DBG_ENABLE_TRACE                 FALSE
+#define CH_DBG_ENABLE_STACK_CHECK           FALSE
+#define CH_DBG_FILL_THREADS                 FALSE
+#define CH_DBG_THREADS_PROFILING            FALSE
+
+#else
+
 /**
  * @brief   Debug option, kernel statistics.
  *
@@ -396,6 +409,8 @@
  *          tickless mode.
  */
 #define CH_DBG_THREADS_PROFILING            FALSE
+
+#endif
 
 /** @} */
 

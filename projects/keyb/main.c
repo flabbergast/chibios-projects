@@ -20,6 +20,26 @@
 
 #include "usb_main.h"
 
+#if defined(F072)
+#define BUTTON_GPIO GPIOA
+#define BUTTON_PIN  GPIOA_BUTTON
+#define BUTTON_MODE PAL_MODE_INPUT
+#define BUTTON_ACTIVE PAL_HIGH
+#define LED_GPIO    GPIOC
+#define LED_PIN     GPIOC_LED_BLUE
+#define LED2_GPIO   GPIOC
+#define LED2_PIN    GPIOC_LED_ORANGE
+#endif
+
+#if defined(F042)
+#define BUTTON_GPIO GPIOB
+#define BUTTON_PIN  GPIOB_BUTTON
+#define BUTTON_MODE PAL_MODE_INPUT
+#define BUTTON_ACTIVE PAL_HIGH
+#define LED_GPIO    GPIOA
+#define LED_PIN     GPIOA_LED_AMBER
+#endif
+
 report_keyboard_t report = {{0}};
 
 #ifdef MOUSE_ENABLE
@@ -45,7 +65,7 @@ static THD_FUNCTION(buttonThread, arg) {
   wkup_old_state = 0;
 
   while(1) {
-    wkup_cur_state = palReadPad(GPIOA, GPIOA_BUTTON);
+    wkup_cur_state = palReadPad(BUTTON_GPIO, BUTTON_PIN);
     if(wkup_cur_state != wkup_old_state) {
       chSysLock();
       if(usbGetDriverStateI(&USB_DRIVER) == USB_ACTIVE) {
@@ -56,13 +76,13 @@ static THD_FUNCTION(buttonThread, arg) {
 
         /* keyboard test, sends 'n' in nkro mode, 'm' in normal mode */
 #ifdef NKRO_ENABLE
-        if(wkup_cur_state) {
+        if(wkup_cur_state == BUTTON_ACTIVE) {
           report.nkro.bits[2] |= 2; // 'n'
         } else {
           report.nkro.bits[2] &= 0b11111101;
         }
 #else
-        report.keys[0] = (wkup_cur_state ? 0x10 : 0); // 'm'
+        report.keys[0] = ((wkup_cur_state == BUTTON_ACTIVE) ? 0x10 : 0); // 'm'
 #endif
         send_keyboard(&report);
 
@@ -70,7 +90,7 @@ static THD_FUNCTION(buttonThread, arg) {
         // send_mouse(&mouse_report);
 
         /* consumer keys test, sends 'mute audio' */
-        // if(wkup_cur_state) {
+        // if(wkup_cur_state == BUTTON_ACTIVE) {
         //   send_consumer(AUDIO_MUTE);
         // } else {
         //   send_consumer(0);
@@ -80,7 +100,7 @@ static THD_FUNCTION(buttonThread, arg) {
          * on macs it takes a second or two for the system to react
          * I suppose it's to prevent from accidental hits of the sleep key
          */
-        // if(wkup_cur_state) {
+        // if(wkup_cur_state == BUTTON_ACTIVE) {
         //   send_system(SYSTEM_SLEEP);
         // } else {
         //   send_system(0);
@@ -89,16 +109,16 @@ static THD_FUNCTION(buttonThread, arg) {
         /* debug console test, sends the button state and the alphabet
          *  - also blink, to see that the code above is not blocking
          */
-        // sendchar((wkup_cur_state ? '1' : '0'));
+        // sendchar(((wkup_cur_state == BUTTON_ACTIVE) ? '1' : '0'));
         // uint8_t n;
         // for(n = 0; n < 26; n++) {
         //   sendchar('A' + n);
         //   sendchar('a' + n);
         // }
         // sendchar('\n');
-        // palSetPad(GPIOC, GPIOC_LED_ORANGE);
+        // palSetPad(LED2_GPIO, LED2_PIN);
         // chThdSleepMilliseconds(50);
-        // palClearPad(GPIOC, GPIOC_LED_ORANGE);
+        // palClearPad(LED2_GPIO, LED2_PIN);
       } else
         chSysUnlock();
 
@@ -120,9 +140,9 @@ static THD_FUNCTION(blinkerThread, arg) {
 
   while(true) {
     systime_t time = USB_DRIVER.state == USB_ACTIVE ? 250 : 500;
-    palClearPad(GPIOC, GPIOC_LED_BLUE);
+    palClearPad(LED_GPIO, LED_PIN);
     chThdSleepMilliseconds(time);
-    palSetPad(GPIOC, GPIOC_LED_BLUE);
+    palSetPad(LED_GPIO, LED_PIN);
     chThdSleepMilliseconds(time);
   }
 }
@@ -135,9 +155,9 @@ int main(void) {
   halInit();
   chSysInit();
 
-  palSetPad(GPIOC, GPIOC_LED_BLUE);
+  palSetPad(LED_GPIO, LED_PIN);
   chThdSleepMilliseconds(400);
-  palClearPad(GPIOC, GPIOC_LED_BLUE);
+  palClearPad(LED_GPIO, LED_PIN);
 
   /* Init USB */
   init_usb_driver(&USB_DRIVER);
@@ -152,12 +172,15 @@ int main(void) {
   chThdSleepMilliseconds(500);
 
   /* Start the button thread */
+  palSetPadMode(BUTTON_GPIO, BUTTON_PIN, BUTTON_MODE);
   chThdCreateStatic(waButtonThread, sizeof(waButtonThread), NORMALPRIO, buttonThread, NULL);
 
   /* Main loop */
   while(true) {
     chThdSleepMilliseconds(200);
     /* caps lock led status */
-    palWritePad(GPIOC, GPIOC_LED_RED, ((keyboard_leds() & 2) == 2));
+#if defined(LED2_GPIO)
+    palWritePad(LED2_GPIO, LED2_PIN, ((keyboard_leds() & 2) == 2));
+#endif
   }
 }

@@ -1070,7 +1070,7 @@ void send_keyboard(report_keyboard_t *report) {
      * this is more efficient */
     /* busy wait, should be short and not very common */
     osalSysLock();
-    while(!usbGetTransmitStatusI(&USB_DRIVER, NKRO_ENDPOINT))
+    while(usbGetTransmitStatusI(&USB_DRIVER, NKRO_ENDPOINT))
       ;
     usbStartTransmitI(&USB_DRIVER, NKRO_ENDPOINT, (uint8_t *)report, sizeof(report_keyboard_t));
     osalSysUnlock();
@@ -1080,7 +1080,7 @@ void send_keyboard(report_keyboard_t *report) {
     /* need to wait until the previous packet has made it through */
     /* busy wait, should be short and not very common */
     osalSysLock();
-    while(!usbGetTransmitStatusI(&USB_DRIVER, KBD_ENDPOINT))
+    while(usbGetTransmitStatusI(&USB_DRIVER, KBD_ENDPOINT))
       ;
     usbStartTransmitI(&USB_DRIVER, KBD_ENDPOINT, (uint8_t *)report, KBD_EPSIZE);
     osalSysUnlock();
