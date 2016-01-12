@@ -44,11 +44,14 @@ uint8_t extra_report_blank[3] = {0};
 #endif /* EXTRAKEY_ENABLE */
 
 #ifdef CONSOLE_ENABLE
-/* The emission queue */
-output_queue_t console_queue;
-static uint8_t console_queue_buffer[CONSOLE_QUEUE_BUFFER_SIZE];
+/* The emission buffers queue */
+output_buffers_queue_t console_buf_queue;
+// the following will work when the chibi bug is fixed
+// static uint8_t console_queue_buffer[BQ_BUFFER_SIZE(CONSOLE_QUEUE_CAPACITY, CONSOLE_EPSIZE)];
+static uint8_t console_queue_buffer[(CONSOLE_EPSIZE+sizeof(size_t))*CONSOLE_QUEUE_CAPACITY];
+
 static virtual_timer_t console_flush_timer;
-void console_queue_onotify(io_queue_t *qp);
+void console_queue_onotify(io_buffers_queue_t *bqp);
 static void console_flush_cb(void *arg);
 #endif /* CONSOLE_ENABLE */
 
@@ -981,7 +984,7 @@ void init_usb_driver(USBDriver *usbp) {
 
   chVTObjectInit(&keyboard_idle_timer);
 #ifdef CONSOLE_ENABLE
-  oqObjectInit(&console_queue, console_queue_buffer, sizeof(console_queue_buffer), console_queue_onotify, (void *)usbp);
+  obqObjectInit(&console_buf_queue, console_queue_buffer, CONSOLE_EPSIZE, CONSOLE_QUEUE_CAPACITY, console_queue_onotify, (void*)usbp);
   chVTObjectInit(&console_flush_timer);
 #endif
 }
@@ -1179,20 +1182,40 @@ void send_consumer(uint16_t data) {
 
 #ifdef CONSOLE_ENABLE
 
-/* debug IN callback hander */
+/* console IN callback hander */
 void console_in_cb(USBDriver *usbp, usbep_t ep) {
-  (void)ep;
+  (void)ep; /* should have ep == CONSOLE_ENDPOINT, so use that to save time/space */
+  uint8_t *buf;
+  size_t n;
+
   osalSysLockFromISR();
 
   /* rearm the timer */
   chVTSetI(&console_flush_timer, MS2ST(CONSOLE_FLUSH_MS), console_flush_cb, (void *)usbp);
 
-  /* Check if there is data to send left in the output queue */
-  if(chOQGetFullI(&console_queue) >= CONSOLE_EPSIZE) {
-    osalSysUnlockFromISR();
-    usbPrepareQueuedTransmit(usbp, CONSOLE_ENDPOINT, &console_queue, CONSOLE_EPSIZE);
-    osalSysLockFromISR();
-    usbStartTransmitI(usbp, CONSOLE_ENDPOINT);
+  /* Freeing the buffer just transmitted, if it was not a zero size packet.*/
+  if (usbp->epc[CONSOLE_ENDPOINT]->in_state->txsize > 0U) {
+    obqReleaseEmptyBufferI(&console_buf_queue);
+  }
+
+  /* Checking if there is a buffer ready for transmission.*/
+  buf = obqGetFullBufferI(&console_buf_queue, &n);
+
+  if (buf != NULL) {
+    /* The endpoint cannot be busy, we are in the context of the callback,
+       so it is safe to transmit without a check.*/
+    /* Should have n == CONSOLE_EPSIZE; check it? */
+    usbStartTransmitI(usbp, CONSOLE_ENDPOINT, buf, CONSOLE_EPSIZE);
+  // } else if ((usbp->epc[CONSOLE_ENDPOINT]->in_state->txsize > 0U) &&
+  //          ((usbp->epc[CONSOLE_ENDPOINT]->in_state->txsize &
+  //           ((size_t)usbp->epc[CONSOLE_ENDPOINT]->in_maxsize - 1U)) == 0U)) {
+    /* Transmit zero sized packet in case the last one has maximum allowed
+       size. Otherwise the recipient may expect more data coming soon and
+       not return buffered data to app. See section 5.8.3 Bulk Transfer
+       Packet Size Constraints of the USB Specification document.*/
+    // usbStartTransmitI(usbp, CONSOLE_ENDPOINT, usbp->setup, 0);
+  } else {
+    /* Nothing to transmit.*/
   }
 
   osalSysUnlockFromISR();
@@ -1200,18 +1223,22 @@ void console_in_cb(USBDriver *usbp, usbep_t ep) {
 
 /* Callback when data is inserted into the output queue
  * Called from a locked state */
-void console_queue_onotify(io_queue_t *qp) {
-  USBDriver *usbp = qGetLink(qp);
+void console_queue_onotify(io_buffers_queue_t *bqp) {
+  size_t n;
+  USBDriver *usbp = bqGetLinkX(bqp);
 
   if(usbGetDriverStateI(usbp) != USB_ACTIVE)
     return;
 
-  if(!usbGetTransmitStatusI(usbp, CONSOLE_ENDPOINT)
-     && (chOQGetFullI(&console_queue) >= CONSOLE_EPSIZE)) {
-    osalSysUnlock();
-    usbPrepareQueuedTransmit(usbp, CONSOLE_ENDPOINT, &console_queue, CONSOLE_EPSIZE);
-    osalSysLock();
-    usbStartTransmitI(usbp, CONSOLE_ENDPOINT);
+  /* Checking if there is already a transaction ongoing on the endpoint.*/
+  if (!usbGetTransmitStatusI(usbp, CONSOLE_ENDPOINT)) {
+    /* Trying to get a full buffer.*/
+    uint8_t *buf = obqGetFullBufferI(&console_buf_queue, &n);
+    if (buf != NULL) {
+      /* Buffer found, starting a new transaction.*/
+      /* Should have n == CONSOLE_EPSIZE; check this? */
+      usbStartTransmitI(usbp, CONSOLE_ENDPOINT, buf, CONSOLE_EPSIZE);
+    }
   }
 }
 
@@ -1219,8 +1246,6 @@ void console_queue_onotify(io_queue_t *qp) {
  * callback (called from ISR, unlocked state) */
 static void console_flush_cb(void *arg) {
   USBDriver *usbp = (USBDriver *)arg;
-  size_t i, n;
-  uint8_t buf[CONSOLE_EPSIZE]; /* TODO: a solution without extra buffer? */
   osalSysLockFromISR();
 
   /* check that the states of things are as they're supposed to */
@@ -1231,23 +1256,28 @@ static void console_flush_cb(void *arg) {
     return;
   }
 
-  /* don't do anything if the queue is empty or has enough stuff in it */
-  if(((n = oqGetFullI(&console_queue)) == 0) || (n >= CONSOLE_EPSIZE)) {
+  /* If there is already a transaction ongoing then another one cannot be
+     started.*/
+  if (usbGetTransmitStatusI(usbp, CONSOLE_ENDPOINT)) {
     /* rearm the timer */
     chVTSetI(&console_flush_timer, MS2ST(CONSOLE_FLUSH_MS), console_flush_cb, (void *)usbp);
     osalSysUnlockFromISR();
     return;
   }
 
-  /* there's stuff hanging in the queue - so dequeue and send */
-  for(i = 0; i < n; i++)
-    buf[i] = (uint8_t)oqGetI(&console_queue);
-  for(i = n; i < CONSOLE_EPSIZE; i++)
-    buf[i] = 0;
-  osalSysUnlockFromISR();
-  usbPrepareTransmit(usbp, CONSOLE_ENDPOINT, buf, CONSOLE_EPSIZE);
-  osalSysLockFromISR();
-  (void)usbStartTransmitI(usbp, CONSOLE_ENDPOINT);
+  /* Checking if there only a buffer partially filled, if so then it is
+     enforced in the queue and transmitted.*/
+  if(obqTryFlushI(&console_buf_queue)) {
+    size_t n,i;
+    uint8_t *buf = obqGetFullBufferI(&console_buf_queue, &n);
+
+    osalDbgAssert(buf != NULL, "queue is empty");
+
+    /* zero the rest of the buffer (buf should point to allocated space) */
+    for(i=n; i<CONSOLE_EPSIZE; i++)
+      buf[i]=0;
+    usbStartTransmitI(usbp, CONSOLE_ENDPOINT, buf, CONSOLE_EPSIZE);
+  }
 
   /* rearm the timer */
   chVTSetI(&console_flush_timer, MS2ST(CONSOLE_FLUSH_MS), console_flush_cb, (void *)usbp);
@@ -1268,7 +1298,7 @@ int8_t sendchar(uint8_t c) {
    * for USB/HIDRAW to dequeue). Another possibility
    * for fixing this kind of thing is to increase
    * CONSOLE_QUEUE_CAPACITY. */
-  return(chOQPutTimeout(&console_queue, c, US2ST(5)));
+  return(obqPutTimeout(&console_buf_queue, c, MS2ST(1)));
 }
 
 #else /* CONSOLE_ENABLE */
