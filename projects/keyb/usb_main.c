@@ -1034,10 +1034,10 @@ static void keyboard_idle_timer_cb(void *arg) {
   if(keyboard_idle) {
 #endif /* NKRO_ENABLE */
     /* TODO: are we sure we want the KBD_ENDPOINT? */
-    osalSysUnlockFromISR();
-    usbPrepareTransmit(usbp, KBD_ENDPOINT, (uint8_t *)&keyboard_report_sent, sizeof(keyboard_report_sent));
-    osalSysLockFromISR();
-    usbStartTransmitI(usbp, KBD_ENDPOINT);
+    // osalSysUnlockFromISR();
+    // usbPrepareTransmit(usbp, KBD_ENDPOINT, (uint8_t *)&keyboard_report_sent, sizeof(keyboard_report_sent));
+    // osalSysLockFromISR();
+    usbStartTransmitI(usbp, KBD_ENDPOINT, (uint8_t *)&keyboard_report_sent, sizeof(keyboard_report_sent));
     /* rearm the timer */
     chVTSetI(&keyboard_idle_timer, 4*MS2ST(keyboard_idle), keyboard_idle_timer_cb, (void *)usbp);
   }
@@ -1062,26 +1062,28 @@ void send_keyboard(report_keyboard_t *report) {
   }
   osalSysUnlock();
 
-  bool ep_not_ready;
 #ifdef NKRO_ENABLE
   if(keyboard_nkro) {  /* NKRO protocol */
-    usbPrepareTransmit(&USB_DRIVER, NKRO_ENDPOINT, (uint8_t *)report, sizeof(report_keyboard_t));
     /* need to wait until the previous packet has made it through */
-    do {
-        osalSysLock();
-        ep_not_ready = usbStartTransmitI(&USB_DRIVER, NKRO_ENDPOINT);
-        osalSysUnlock();
-    } while (ep_not_ready);
+    /* can rewrite this using the synchronous API, then would wait
+     * until *after* the packet has been transmitted. I think
+     * this is more efficient */
+    /* busy wait, should be short and not very common */
+    osalSysLock();
+    while(!usbGetTransmitStatusI(&USB_DRIVER, NKRO_ENDPOINT))
+      ;
+    usbStartTransmitI(&USB_DRIVER, NKRO_ENDPOINT, (uint8_t *)report, sizeof(report_keyboard_t));
+    osalSysUnlock();
   } else
 #endif /* NKRO_ENABLE */
   { /* boot protocol */
-    usbPrepareTransmit(&USB_DRIVER, KBD_ENDPOINT, (uint8_t *)report, KBD_EPSIZE);
     /* need to wait until the previous packet has made it through */
-    do {
-        osalSysLock();
-        ep_not_ready = usbStartTransmitI(&USB_DRIVER, KBD_ENDPOINT);
-        osalSysUnlock();
-    } while (ep_not_ready);
+    /* busy wait, should be short and not very common */
+    osalSysLock();
+    while(!usbGetTransmitStatusI(&USB_DRIVER, KBD_ENDPOINT))
+      ;
+    usbStartTransmitI(&USB_DRIVER, KBD_ENDPOINT, (uint8_t *)report, KBD_EPSIZE);
+    osalSysUnlock();
   }
   keyboard_report_sent = *report;
 }
@@ -1112,9 +1114,8 @@ void send_mouse(report_mouse_t *report) {
    * is this really needed?
    */
 
-  usbPrepareTransmit(&USB_DRIVER, MOUSE_ENDPOINT, (uint8_t *)report, sizeof(report_mouse_t));
   osalSysLock();
-  usbStartTransmitI(&USB_DRIVER, MOUSE_ENDPOINT);
+  usbStartTransmitI(&USB_DRIVER, MOUSE_ENDPOINT, (uint8_t *)report, sizeof(report_mouse_t));
   osalSysUnlock();
 }
 
@@ -1150,10 +1151,7 @@ static void send_extra_report(uint8_t report_id, uint16_t data) {
     .usage = data
   };
 
-  osalSysUnlock();
-  usbPrepareTransmit(&USB_DRIVER, EXTRA_ENDPOINT, (uint8_t *)&report, sizeof(report_extra_t));
-  osalSysLock();
-  usbStartTransmitI(&USB_DRIVER, EXTRA_ENDPOINT);
+  usbStartTransmitI(&USB_DRIVER, EXTRA_ENDPOINT, (uint8_t *)&report, sizeof(report_extra_t));
   osalSysUnlock();
 }
 
