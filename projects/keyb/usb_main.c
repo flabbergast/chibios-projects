@@ -46,9 +46,7 @@ uint8_t extra_report_blank[3] = {0};
 #ifdef CONSOLE_ENABLE
 /* The emission buffers queue */
 output_buffers_queue_t console_buf_queue;
-// the following will work when the chibi bug is fixed
-// static uint8_t console_queue_buffer[BQ_BUFFER_SIZE(CONSOLE_QUEUE_CAPACITY, CONSOLE_EPSIZE)];
-static uint8_t console_queue_buffer[(CONSOLE_EPSIZE+sizeof(size_t))*CONSOLE_QUEUE_CAPACITY];
+static uint8_t console_queue_buffer[BQ_BUFFER_SIZE(CONSOLE_QUEUE_CAPACITY, CONSOLE_EPSIZE)];
 
 static virtual_timer_t console_flush_timer;
 void console_queue_onotify(io_buffers_queue_t *bqp);
@@ -1037,9 +1035,6 @@ static void keyboard_idle_timer_cb(void *arg) {
   if(keyboard_idle) {
 #endif /* NKRO_ENABLE */
     /* TODO: are we sure we want the KBD_ENDPOINT? */
-    // osalSysUnlockFromISR();
-    // usbPrepareTransmit(usbp, KBD_ENDPOINT, (uint8_t *)&keyboard_report_sent, sizeof(keyboard_report_sent));
-    // osalSysLockFromISR();
     usbStartTransmitI(usbp, KBD_ENDPOINT, (uint8_t *)&keyboard_report_sent, sizeof(keyboard_report_sent));
     /* rearm the timer */
     chVTSetI(&keyboard_idle_timer, 4*MS2ST(keyboard_idle), keyboard_idle_timer_cb, (void *)usbp);
