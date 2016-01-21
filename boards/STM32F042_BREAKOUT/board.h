@@ -883,6 +883,12 @@
                                      PIN_AFIO_AF(GPIOF_PIN14, 0) |          \
                                      PIN_AFIO_AF(GPIOF_PIN15, 0))
 
+/**
+ * @brief   Magic number for jumping to bootloader.
+ */
+#if !defined(MAGIC_BOOTLOADER_NUMBER) || defined(__DOXYGEN__)
+#define MAGIC_BOOTLOADER_NUMBER 0xDEADBEEF
+#endif
 
 #if !defined(_FROM_ASM_)
 #ifdef __cplusplus

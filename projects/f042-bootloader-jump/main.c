@@ -28,7 +28,7 @@
 extern uint32_t __ram0_end__;
 
 void jump_to_bootloader(void) {
-  *((unsigned long *)(SYMVAL(__ram0_end__) - 4)) = 0xDEADBEEF; // set magic flag => reset handler will jump into boot loader
+  *((unsigned long *)(SYMVAL(__ram0_end__) - 4)) = MAGIC_BOOTLOADER_NUMBER; // set magic flag => reset handler will jump into boot loader
    NVIC_SystemReset();
 }
 

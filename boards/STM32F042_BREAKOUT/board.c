@@ -62,12 +62,32 @@ const PALConfig pal_default_config = {
 };
 #endif
 
+/*
+ * @brief Utility definitions for jumping to bootloader.
+ */
+#define SYMVAL(sym) (uint32_t)(((uint8_t *)&(sym)) - ((uint8_t *)0))
+extern uint32_t __ram0_end__;
+
 /**
  * @brief   Early initialization code.
  * @details This initialization must be performed just after stack setup
  *          and before any other initialization.
  */
 void __early_init(void) {
+
+#if defined(BOOTLOADER_ADDRESS)
+  if(*((unsigned long *)(SYMVAL(__ram0_end__) - 4)) == MAGIC_BOOTLOADER_NUMBER) { /* magic flag set */
+    *((unsigned long *)(SYMVAL(__ram0_end__) - 4)) = 0; /* erase the magic */
+    /* jump */
+    asm(
+      "ldr     r0, =" BOOTLOADER_ADDRESS "\n\t"
+      "ldr     r1, [r0, #0]\n\t"
+      "mov     sp, r1\n\t"
+      "ldr     r0, [r0, #4]\n\t"
+      "bx      r0"
+    );
+  }
+#endif /* BOOTLOADER_ADDRESS */
 
   stm32_clock_init();
 }

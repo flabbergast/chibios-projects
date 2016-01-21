@@ -207,10 +207,10 @@ CPPWARN = -Wall -Wextra -Wundef
 #
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS =
+UDEFS = -DBOOTLOADER_ADDRESS=\"0x1FFFC400\"
 
 # Define ASM defines here
-UADEFS = -DBOOTLOADER_ADDRESS=0x1FFFC400
+UADEFS =
 
 # List all user directories here
 UINCDIR =
