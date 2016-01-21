@@ -153,6 +153,10 @@ static THD_FUNCTION(blinkerThread, arg) {
 int main(void) {
   /* ChibiOS/RT init */
   halInit();
+#if defined(F042)
+  SYSCFG->CFGR1 |= SYSCFG_CFGR1_PA11_PA12_RMP; /* remap pins to USB */
+#endif /* F042 */
+
   chSysInit();
 
   palSetPad(LED_GPIO, LED_PIN);
