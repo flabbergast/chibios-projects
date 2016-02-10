@@ -307,8 +307,13 @@ static void usb_event(USBDriver *usbp, usbevent_t event) {
     return;
 
   case USB_EVENT_SUSPEND:
-    return;
+    chSysLockFromISR();
 
+    /* Disconnection event on suspend.*/
+    sduDisconnectI(&SDU1);
+
+    chSysUnlockFromISR();
+    return;
   case USB_EVENT_WAKEUP:
     return;
 
@@ -319,13 +324,25 @@ static void usb_event(USBDriver *usbp, usbevent_t event) {
 }
 
 /*
+ * Handles the Start of Frame event.
+ */
+static void sof_handler(USBDriver *usbp) {
+
+  (void)usbp;
+
+  osalSysLockFromISR();
+  sduSOFHookI(&SDU1);
+  osalSysUnlockFromISR();
+}
+
+/*
  * USB driver configuration.
  */
 static const USBConfig usbcfg = {
   usb_event,
   get_descriptor,
   sduRequestsHook,
-  NULL
+  sof_handler
 };
 
 /*
@@ -376,6 +393,8 @@ int main(void) {
    */
   SYSCFG->CFGR1 |= SYSCFG_CFGR1_PA11_PA12_RMP;
   chSysInit();
+
+  palSetPadMode(GPIOB, 7, PAL_MODE_OUTPUT_PUSHPULL);
 
   /*
    * Initializes a serial-over-USB CDC driver.
