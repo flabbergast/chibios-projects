@@ -147,7 +147,6 @@ typedef struct {
 
 /* Number of IN reports that can be stored inside the output queue */
 #define CONSOLE_QUEUE_CAPACITY 2
-#define CONSOLE_QUEUE_BUFFER_SIZE (CONSOLE_QUEUE_CAPACITY * CONSOLE_EPSIZE)
 
 /* Console flush time */
 #define CONSOLE_FLUSH_MS 50
