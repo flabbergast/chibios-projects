@@ -78,6 +78,28 @@ void __early_init(void) {
 #if defined(BOOTLOADER_ADDRESS)
   if(*((unsigned long *)(SYMVAL(__ram0_end__) - 4)) == MAGIC_BOOTLOADER_NUMBER) { /* magic flag set */
     *((unsigned long *)(SYMVAL(__ram0_end__) - 4)) = 0; /* erase the magic */
+    /* This may not work (it does not for me). */
+    /* May help sometimes, item 1:
+     * remap the system flash to 0 */
+    // RCC->APB2ENR |= RCC_APB2ENR_SYSCFGCOMPEN;
+    // SYSCFG->CFGR1 &= ~(SYSCFG_CFGR1_MEM_MODE);
+    // SYSCFG->CFGR1 |= SYSCFG_CFGR1_MEM_MODE_0;
+    /* May help sometimes, item 2:
+     * forcibly write HIGH to PB8 (note this is BOOT0
+     * on STM32F042 TSSOP-20 and LQFP-32 packages - check yours!).
+     */
+    RCC->AHBENR |= RCC_AHBENR_GPIOBEN; // enable clock
+    GPIOB->MODER |= GPIO_MODER_MODER8_0; // output mode
+    GPIOB->OTYPER &= ~GPIO_OTYPER_OT_8; // pushpull
+    GPIOB->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR8; // 2MHz 
+    GPIOB->PUPDR |= GPIO_PUPDR_PUPDR8; // enable pullup...
+    GPIOB->BSRR.H.set = (1<<8); // write high
+    // asm(  // wait for a while
+    //   "ldr     r0,=0x200000\n\t"
+    //   "dowaitloop:\n\t"
+    //   "sub     r0,#1\n\t"
+    //   "bne     dowaitloop\n\t"
+    // );
     /* jump */
     asm(
       "ldr     r0, =" BOOTLOADER_ADDRESS "\n\t"

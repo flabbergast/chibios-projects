@@ -63,6 +63,7 @@ static THD_FUNCTION(Thread2, arg) {
       chThdSleepMilliseconds(20); /* debounce */
       newstate = palReadPad(GPIOB, GPIOB_BUTTON);
       if(newstate != state) {
+        chThdSleepMilliseconds(2000);
         jump_to_bootloader();
       }
     }
