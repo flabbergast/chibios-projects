@@ -1,5 +1,7 @@
 # ChibiOS/rawHID USB example
 
+*NOTE* Now working at the moment; needs updating to the new USB API.
+
 Originally from: https://github.com/guiduc/usb-hid-chibios-example
 
 Runs on STM32F072B-DISCOVERY board.

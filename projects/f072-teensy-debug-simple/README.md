@@ -1,5 +1,7 @@
 # A Teensy-style "debug" channel over USB raw HID
 
+*NOTE* Not working ATM; needs updating to the new USB API.
+
 ## A simple version
 
 This example implements a raw HID device, which is able to send "debug" messages, akin to the original [Teensy] [usb_debug_only] example.
