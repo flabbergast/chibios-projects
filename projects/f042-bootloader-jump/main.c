@@ -28,8 +28,11 @@
 extern uint32_t __ram0_end__;
 
 void jump_to_bootloader(void) {
-  *((unsigned long *)(SYMVAL(__ram0_end__) - 4)) = MAGIC_BOOTLOADER_NUMBER; // set magic flag => reset handler will jump into boot loader
-   NVIC_SystemReset();
+  // *((unsigned long *)(SYMVAL(__ram0_end__) - 4)) = MAGIC_BOOTLOADER_NUMBER; // set magic flag => reset handler will jump into boot loader
+  palSetPadMode(GPIOB, 8, PAL_MODE_OUTPUT_PUSHPULL);
+  palSetPad(GPIOB, 8);
+  chThdSleepMilliseconds(100);
+  NVIC_SystemReset();
 }
 
 /*
