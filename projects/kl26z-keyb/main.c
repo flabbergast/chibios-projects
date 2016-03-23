@@ -129,12 +129,6 @@ static THD_FUNCTION(blinkerThread, arg) {
   }
 }
 
-#if defined(DEBUG_USB)
-SerialConfig s0cfg = {
-  115200
-};
-#endif /* DEBUG_USB */
-
 /* for remote wakeup */
 bool suspend_wakeup_condition(void) {
   if(palReadPad(GPIO_BUTTON, PIN_BUTTON) == PAL_LOW) {
@@ -160,14 +154,6 @@ int main(void) {
   chThdSleepMilliseconds(400);
   palSetPad(GPIO_LED_BLUE, PIN_LED_BLUE);
 #endif /* BOARD_PJRC_TEENSY_LC */
-
-#if defined(DEBUG_USB)
-  sdStart(&SD1, &s0cfg);
-#endif /* DEBUG_USB */
-
-#if defined(DEBUG_USB)
-  usb_debug_init();
-#endif /* DEBUG_USB */
 
   /* Init USB */
   init_usb_driver(&USB_DRIVER);

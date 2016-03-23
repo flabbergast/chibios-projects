@@ -132,7 +132,7 @@
  * @brief   Enables the SERIAL subsystem.
  */
 #if !defined(HAL_USE_SERIAL) || defined(__DOXYGEN__)
-#define HAL_USE_SERIAL              TRUE
+#define HAL_USE_SERIAL              FALSE
 #endif
 
 /**
@@ -168,15 +168,6 @@
  */
 #if !defined(HAL_USE_WDG) || defined(__DOXYGEN__)
 #define HAL_USE_WDG                 FALSE
-#endif
-
-/*
- * @brief   Enable debugging messages over SD1.
- *
- * @note    Requires HAL_USE_SERIAL.
- */
-#if HAL_USE_SERIAL
-// #define DEBUG_USB
 #endif
 
 /*===========================================================================*/
@@ -354,7 +345,7 @@
  * @note    Disabling this option saves both code and data space.
  */
 #if !defined(USB_USE_WAIT) || defined(__DOXYGEN__)
-#define USB_USE_WAIT                FALSE
+#define USB_USE_WAIT                TRUE
 #endif
 
 #endif /* _HALCONF_H_ */
