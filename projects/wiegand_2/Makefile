@@ -88,8 +88,8 @@ PROJECT = ch
 # TARGET = TEENSY30
 # TARGET = TEENSY32
 # TARGET = MCHCK
-TARGET = KL27Z
-# TARGET = F042
+# TARGET = KL27Z
+TARGET = F042
 
 ifeq ($(TARGET),TEENSY30)
 MCU_FAMILY = KINETIS
@@ -145,20 +145,33 @@ ROOTDIR = ../..
 
 # Imported source files and paths
 CHIBIOS = $(ROOTDIR)/chibios
+CHIBIOS_CONTRIB = $(ROOTDIR)/chibios-contrib
 # Startup files.
-include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/startup_$(MCU_STARTUP).mk
+ifeq ($(MCU_FAMILY),KINETIS)
+	include $(CHIBIOS_CONTRIB)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_$(MCU_STARTUP).mk
+else
+	include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_$(MCU_STARTUP).mk
+endif
 # HAL-OSAL files (optional).
 include $(CHIBIOS)/os/hal/hal.mk
-include $(CHIBIOS)/os/hal/ports/$(MCU_FAMILY)/$(MCU_SERIES)/platform.mk
+ifeq ($(MCU_FAMILY),KINETIS)
+	include $(CHIBIOS_CONTRIB)/os/hal/ports/$(MCU_FAMILY)/$(MCU_SERIES)/platform.mk
+else
+	include $(CHIBIOS)/os/hal/ports/$(MCU_FAMILY)/$(MCU_SERIES)/platform.mk
+endif
 ifneq ("$(wildcard $(ROOTDIR)/boards/$(BOARD))","")
 	include $(ROOTDIR)/boards/$(BOARD)/board.mk
 else
-	include $(CHIBIOS)/os/hal/boards/$(BOARD)/board.mk
+	ifeq ($(MCU_FAMILY),KINETIS)
+		include $(CHIBIOS_CONTRIB)/os/hal/boards/$(BOARD)/board.mk
+	else
+		include $(CHIBIOS)/os/hal/boards/$(BOARD)/board.mk
+	endif
 endif
 include $(CHIBIOS)/os/hal/osal/rt/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
-include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_v$(ARMV)m.mk
+include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v$(ARMV)m.mk
 # Other files (optional).
 
 # Define linker script file here
@@ -260,12 +273,15 @@ CPPWARN = -Wall -Wextra -Wundef
 # List all user C define here, like -D_DEBUG=1
 UDEFS = 
 
+
+
+
 ifeq ($(TARGET),TEENSY30)
 UDEFS += -DTEENSY30
 endif
 
 ifeq ($(TARGET),TEENSY32)
-UDEFS += -DTEENSY30
+UDEFS += -DTEENSY32
 endif
 
 ifeq ($(TARGET),MCHCK)
@@ -296,7 +312,7 @@ ULIBS =
 # End of user defines
 ##############################################################################
 
-RULESPATH = $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC
+RULESPATH = $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC
 include $(RULESPATH)/rules.mk
 
 include $(ROOTDIR)/common.mk

@@ -1,5 +1,5 @@
 /*
-    ChibiOS/RT - Copyright (C) 2006-2014 Giovanni Di Sirio
+    ChibiOS - Copyright (C) 2006..2015 Giovanni Di Sirio
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@
  * @details Frequency of the system timer that drives the system ticks. This
  *          setting also defines the system tick time unit.
  */
-#if defined(TEENSY30) || defined(MCHCK) || defined(KL27Z)
+#if defined(TEENSY30) || defined(TEENSY32) || defined(MCHCK) || defined(KL27Z)
 #define CH_CFG_ST_FREQUENCY                 1000
 #elif defined(F042)
 #define CH_CFG_ST_FREQUENCY                 10000
@@ -62,7 +62,7 @@
  *          The value one is not valid, timeouts are rounded up to
  *          this value.
  */
-#if defined(TEENSY30) || defined(MCHCK) || defined(KL27Z)
+#if defined(TEENSY30) || defined(TEENSY32) || defined(MCHCK) || defined(KL27Z)
 #define CH_CFG_ST_TIMEDELTA                 0
 #elif defined(F042)
 #define CH_CFG_ST_TIMEDELTA                 2
@@ -89,7 +89,7 @@
  * @note    The round robin preemption is not supported in tickless mode and
  *          must be set to zero in that case.
  */
-#if defined(TEENSY30) || defined(MCHCK) || defined(KL27Z)
+#if defined(TEENSY30) || defined(TEENSY32) || defined(MCHCK) || defined(KL27Z)
 #define CH_CFG_TIME_QUANTUM                 20
 #elif defined(F042)
 #define CH_CFG_TIME_QUANTUM                 0
@@ -113,7 +113,8 @@
  * @details When this option is activated the function @p chSysInit()
  *          does not spawn the idle thread. The application @p main()
  *          function becomes the idle thread and must implement an
- *          infinite loop. */
+ *          infinite loop.
+ */
 #define CH_CFG_NO_IDLE_THREAD               FALSE
 
 /** @} */
@@ -276,14 +277,6 @@
 #define CH_CFG_USE_MAILBOXES                TRUE
 
 /**
- * @brief   I/O Queues APIs.
- * @details If enabled then the I/O queues APIs are included in the kernel.
- *
- * @note    The default is @p TRUE.
- */
-#define CH_CFG_USE_QUEUES                   TRUE
-
-/**
  * @brief   Core Memory Manager APIs.
  * @details If enabled then the core memory manager APIs are included
  *          in the kernel.
@@ -333,6 +326,20 @@
  */
 /*===========================================================================*/
 
+#if defined(F042)
+
+#define CH_DBG_STATISTICS                   FALSE
+#define CH_DBG_SYSTEM_STATE_CHECK           TRUE
+#define CH_DBG_ENABLE_CHECKS                FALSE
+#define CH_DBG_ENABLE_ASSERTS               FALSE
+#define CH_DBG_TRACE_MASK                   CH_DBG_TRACE_MASK_NONE
+#define CH_DBG_TRACE_BUFFER_SIZE            128
+#define CH_DBG_ENABLE_STACK_CHECK           FALSE
+#define CH_DBG_FILL_THREADS                 FALSE
+#define CH_DBG_THREADS_PROFILING            FALSE
+
+#else
+
 /**
  * @brief   Debug option, kernel statistics.
  *
@@ -347,8 +354,7 @@
  *
  * @note    The default is @p FALSE.
  */
-// #define CH_DBG_SYSTEM_STATE_CHECK           TRUE
-#define CH_DBG_SYSTEM_STATE_CHECK           FALSE
+#define CH_DBG_SYSTEM_STATE_CHECK           TRUE
 
 /**
  * @brief   Debug option, parameters checks.
@@ -357,8 +363,7 @@
  *
  * @note    The default is @p FALSE.
  */
-// #define CH_DBG_ENABLE_CHECKS                TRUE
-#define CH_DBG_ENABLE_CHECKS                FALSE
+#define CH_DBG_ENABLE_CHECKS                TRUE
 
 /**
  * @brief   Debug option, consistency checks.
@@ -368,18 +373,23 @@
  *
  * @note    The default is @p FALSE.
  */
-// #define CH_DBG_ENABLE_ASSERTS               TRUE
-#define CH_DBG_ENABLE_ASSERTS               FALSE
+#define CH_DBG_ENABLE_ASSERTS               TRUE
 
 /**
  * @brief   Debug option, trace buffer.
  * @details If enabled then the context switch circular trace buffer is
  *          activated.
  *
- * @note    The default is @p FALSE.
+ * @note    The default is @p CH_DBG_TRACE_MASK_NONE.
  */
-// #define CH_DBG_ENABLE_TRACE                 TRUE
-#define CH_DBG_ENABLE_TRACE                 FALSE
+#define CH_DBG_TRACE_MASK                   CH_DBG_TRACE_MASK_NONE
+
+/**
+ * @brief   Trace buffer entries.
+ * @note    The trace buffer is only allocated if @p CH_DBG_TRACE_MASK is
+ *          different from @p CH_DBG_TRACE_MASK_NONE.
+ */
+#define CH_DBG_TRACE_BUFFER_SIZE            128
 
 /**
  * @brief   Debug option, stack checks.
@@ -391,8 +401,7 @@
  * @note    The default failure mode is to halt the system with the global
  *          @p panic_msg variable set to @p NULL.
  */
-// #define CH_DBG_ENABLE_STACK_CHECK           TRUE
-#define CH_DBG_ENABLE_STACK_CHECK           FALSE
+#define CH_DBG_ENABLE_STACK_CHECK           TRUE
 
 /**
  * @brief   Debug option, stacks initialization.
@@ -402,8 +411,7 @@
  *
  * @note    The default is @p FALSE.
  */
-// #define CH_DBG_FILL_THREADS                 TRUE
-#define CH_DBG_FILL_THREADS                 FALSE
+#define CH_DBG_FILL_THREADS                 TRUE
 
 /**
  * @brief   Debug option, threads profiling.
@@ -415,6 +423,8 @@
  *          tickless mode.
  */
 #define CH_DBG_THREADS_PROFILING            FALSE
+
+#endif
 
 /** @} */
 
@@ -446,10 +456,6 @@
 /**
  * @brief   Threads finalization hook.
  * @details User finalization code added to the @p chThdExit() API.
- *
- * @note    It is inserted into lock zone.
- * @note    It is also invoked when the threads simply return in order to
- *          terminate.
  */
 #define CH_CFG_THREAD_EXIT_HOOK(tp) {                                       \
   /* Add threads finalization code here.*/                                  \
@@ -460,7 +466,7 @@
  * @details This hook is invoked just before switching between threads.
  */
 #define CH_CFG_CONTEXT_SWITCH_HOOK(ntp, otp) {                              \
-  /* System halt code here.*/                                               \
+  /* Context switch code here.*/                                            \
 }
 
 /**
@@ -483,7 +489,8 @@
  *          should be invoked from here.
  * @note    This macro can be used to activate a power saving mode.
  */
-#define CH_CFG_IDLE_ENTER_HOOK() {                                         \
+#define CH_CFG_IDLE_ENTER_HOOK() {                                          \
+  /* Idle-enter code here.*/                                                \
 }
 
 /**
@@ -492,7 +499,8 @@
  *          should be invoked from here.
  * @note    This macro can be used to deactivate a power saving mode.
  */
-#define CH_CFG_IDLE_LEAVE_HOOK() {                                         \
+#define CH_CFG_IDLE_LEAVE_HOOK() {                                          \
+  /* Idle-leave code here.*/                                                \
 }
 
 /**

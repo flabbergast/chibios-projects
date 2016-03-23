@@ -29,7 +29,7 @@
 
 #include "chprintf.h"
 
-#if defined(TEENSY30)
+#if defined(TEENSY30) || defined(TEENSY32)
 /* Teensy 3.0 and 3.2*/
 #define BUTTON_GPIO TEENSY_PIN2_IOPORT
 #define BUTTON_PIN TEENSY_PIN2
@@ -95,7 +95,7 @@ static const uint8_t vcom_device_descriptor_data[18] = {
                   0x00,                 /* bDeviceProtocol.                 */
                   0x40,                 /* bMaxPacketSize.                  */
                   0x0179,               /* idVendor.                        */
-#if defined(TEENSY30)
+#if defined(TEENSY30) || defined(TEENSY32)
                   0x0002,               /* idProduct.                       */
 #elif defined(MCHCK)
                   0x0003,               /* idProduct.                       */
@@ -445,7 +445,7 @@ void phex24(uint32_t c);
 void phex32(uint32_t c);
 void wieg_decode_26(uint8_t *buf, uint8_t n);
 
-#if defined(TEENSY30)
+#if defined(TEENSY30) || defined(TEENSY32)
 #define WIEG_IN_DAT0_GPIO TEENSY_PIN6_IOPORT
 #define WIEG_IN_DAT0_PORT PORTD
 #define WIEG_IN_DAT0_PIN TEENSY_PIN6
@@ -536,7 +536,7 @@ static void extcb1(EXTDriver *extp, expchannel_t channel) {
   osalSysUnlockFromISR();
 }
 
-#if defined(TEENSY30) || defined(MCHCK) || defined(KL27Z)
+#if defined(TEENSY30) || defined(TEENSY32) || defined(MCHCK) || defined(KL27Z)
 static const EXTConfig extcfg = {
   {
    {EXT_CH_MODE_FALLING_EDGE|EXT_CH_MODE_AUTOSTART, extcb0, WIEG_IN_DAT0_PORT, WIEG_IN_DAT0_PIN},
