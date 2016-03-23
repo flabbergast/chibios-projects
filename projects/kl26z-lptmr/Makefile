@@ -82,34 +82,38 @@ PROJECT = ch
 
 MCU_FAMILY = KINETIS
 MCU_SERIES = KL2x
-MCU_MODEL_FAMILY = MKL2xZ128
+MCU_STARTUP = kl2x
+ARMV = 6
+MCU = cortex-m0plus
+MCU_LDSCRIPT = MKL2xZ128
 BOARD = FREESCALE_FREEDOM_KL26Z
 
 ROOTDIR = ../..
 
 # Imported source files and paths
 CHIBIOS = $(ROOTDIR)/chibios
+CHIBIOS_CONTRIB = $(ROOTDIR)/chibios-contrib
 # Startup files.
-include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/startup_$(shell echo $(MCU_SERIES) | tr '[:upper:]' '[:lower:]').mk
+include $(CHIBIOS_CONTRIB)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_$(MCU_STARTUP).mk
 # HAL-OSAL files (optional).
 include $(CHIBIOS)/os/hal/hal.mk
-include $(CHIBIOS)/os/hal/ports/$(MCU_FAMILY)/$(MCU_SERIES)/platform.mk
+include $(CHIBIOS_CONTRIB)/os/hal/ports/$(MCU_FAMILY)/$(MCU_SERIES)/platform.mk
 ifneq ("$(wildcard $(ROOTDIR)/boards/$(BOARD))","")
 	include $(ROOTDIR)/boards/$(BOARD)/board.mk
 else
-	include $(CHIBIOS)/os/hal/boards/$(BOARD)/board.mk
+	include $(CHIBIOS_CONTRIB)/os/hal/boards/$(BOARD)/board.mk
 endif
 include $(CHIBIOS)/os/hal/osal/rt/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
-include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk
+include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v$(ARMV)m.mk
 # Other files (optional).
 
 # Define linker script file here
-ifneq ("$(wildcard $(ROOTDIR)/ld/$(MCU_MODEL_FAMILY).ld)","")
-LDSCRIPT = $(ROOTDIR)/ld/$(MCU_MODEL_FAMILY).ld
+ifneq ("$(wildcard $(ROOTDIR)/ld/$(MCU_LDSCRIPT).ld)","")
+LDSCRIPT = $(ROOTDIR)/ld/$(MCU_LDSCRIPT).ld
 else
-LDSCRIPT = $(STARTUPLD)/$(MCU_MODEL_FAMILY).ld
+LDSCRIPT = $(STARTUPLD)/$(MCU_LDSCRIPT).ld
 endif
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
@@ -220,5 +224,5 @@ ULIBS =
 # End of user defines
 ##############################################################################
 
-RULESPATH = $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC
+RULESPATH = $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC
 include $(RULESPATH)/rules.mk
