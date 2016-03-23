@@ -59,7 +59,7 @@ static THD_FUNCTION(thSerEcho, arg) {
       do {
         charbuf = chnGetTimeout(&SD1, TIME_IMMEDIATE);
         if(charbuf != Q_TIMEOUT) {
-          chSequentialStreamPut(&SD1, charbuf);
+          streamPut(&SD1, charbuf);
         }
       } while(charbuf != Q_TIMEOUT);
     }
