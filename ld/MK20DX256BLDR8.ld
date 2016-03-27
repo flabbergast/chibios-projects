@@ -50,4 +50,4 @@ REGION_ALIAS("BSS_RAM", ram0);
 /* RAM region to be used for the default heap.*/
 REGION_ALIAS("HEAP_RAM", ram0);
 
-INCLUDE ld/rules_kinetis_bldr.ld
+INCLUDE rules_kinetis_bldr.ld
