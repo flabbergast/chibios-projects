@@ -17,7 +17,7 @@ SERIAL_PORT = /dev/tty.usbserial-DJ005LMJ
 
 serialflash: all
 	#stm32flash -w $(BUILDDIR)/$(PROJECT).hex -v $(SERIAL_PORT)
-	stm32loader.py -evw -b 57600 $(BUILDDIR)/$(PROJECT).bin
+	stm32loader.py -evw -b 57600 -p $(SERIAL_PORT) $(BUILDDIR)/$(PROJECT).bin
 
 ### dfu-util
 
