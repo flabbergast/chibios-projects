@@ -141,11 +141,10 @@ MCU_LDSCRIPT = STM32F042x4
 BOARD = STM32F042_BREAKOUT
 endif
 
+# Set ROOTDIR and CHIBIOS* variables
 ROOTDIR = ../..
+include $(ROOTDIR)/chibios-dirs.mk
 
-# Imported source files and paths
-CHIBIOS = $(ROOTDIR)/chibios
-CHIBIOS_CONTRIB = $(ROOTDIR)/chibios-contrib
 # Startup files.
 ifeq ($(MCU_FAMILY),KINETIS)
 	include $(CHIBIOS_CONTRIB)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_$(MCU_STARTUP).mk

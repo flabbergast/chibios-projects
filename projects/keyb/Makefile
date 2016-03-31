@@ -97,10 +97,11 @@ ifeq ($(TARGET),F042)
 MCU_LDSCRIPT = STM32F042x4
 BOARD = STM32F042_BREAKOUT
 endif
-ROOTDIR = ../..
 
-# Imported source files and paths
-CHIBIOS = $(ROOTDIR)/chibios
+# Set ROOTDIR and CHIBIOS* variables
+ROOTDIR = ../..
+include $(ROOTDIR)/chibios-dirs.mk
+
 # Startup files.
 include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_$(MCU_STARTUP).mk
 # HAL-OSAL files (optional).

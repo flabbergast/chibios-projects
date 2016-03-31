@@ -88,11 +88,10 @@ MCU = cortex-m0plus
 MCU_LDSCRIPT = MKL2xZ128
 BOARD = FREESCALE_FREEDOM_KL26Z
 
+# Set ROOTDIR and CHIBIOS* variables
 ROOTDIR = ../..
+include $(ROOTDIR)/chibios-dirs.mk
 
-# Imported source files and paths
-CHIBIOS = $(ROOTDIR)/chibios
-CHIBIOS_CONTRIB = $(ROOTDIR)/chibios-contrib
 # Startup files.
 include $(CHIBIOS_CONTRIB)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_$(MCU_STARTUP).mk
 # HAL-OSAL files (optional).

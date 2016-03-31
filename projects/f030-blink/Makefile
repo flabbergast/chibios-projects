@@ -87,10 +87,10 @@ MCU_LDSCRIPT = STM32F030x4
 ARMV = 6
 BOARD = STM32F030_BREAKOUT
 
+# Set ROOTDIR and CHIBIOS* variables
 ROOTDIR = ../..
+include $(ROOTDIR)/chibios-dirs.mk
 
-# Imported source files and paths
-CHIBIOS = $(ROOTDIR)/chibios
 # Startup files.
 include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_$(MCU_STARTUP).mk
 # HAL-OSAL files (optional).
