@@ -5,7 +5,7 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -O2 -ggdb -fomit-frame-pointer -falign-functions=16
+  USE_OPT = -O0 -ggdb -fomit-frame-pointer -falign-functions=16
 endif
 
 # C specific options here (added to USE_OPT).
@@ -137,7 +137,7 @@ MCU_SERIES = STM32F0xx
 MCU_STARTUP = stm32f0xx
 ARMV = 6
 MCU  = cortex-m0
-MCU_LDSCRIPT = STM32F042x4
+MCU_LDSCRIPT = STM32F042x6
 BOARD = STM32F042_BREAKOUT
 endif
 
@@ -190,6 +190,8 @@ CSRC = $(STARTUPSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
        main.c \
+       usbcfg.c \
+       wiegand.c \
        $(CHIBIOS)/os/hal/lib/streams/chprintf.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
