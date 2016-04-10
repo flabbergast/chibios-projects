@@ -12,16 +12,29 @@
 
 void wieg_init(void);
 void wieg_send(uint8_t* buf, uint8_t n);
-// void phex4(BaseChannel *chn, uint8_t c);
-// void phex(BaseChannel *chn, uint8_t c);
-// void phex16(BaseChannel *chn, uint32_t c);
-// void phex24(BaseChannel *chn, uint32_t c);
-// void phex32(BaseChannel *chn, uint32_t c);
-// void pent(BaseChannel *chn);
 bool wieg_is_26(uint8_t *buf, uint8_t n);
 uint32_t wieg_decode_26(uint8_t *buf);
 
+uint16_t read_print_mode(void);
+void write_print_mode(uint16_t mode);
+
 extern volatile uint8_t led_blink;
+
+extern volatile uint16_t print_mode;
+
+#define MODE_SIGNATURE 0xBE00
+
+#define MODE_ERR (1<<0)
+#define MODE_26  (1<<1)
+#define MODE_34  (1<<2)
+
+#define MODE_DEBUG   MODE_ERR|MODE_26|MODE_34
+#define MODE_DEFAULT MODE_26|MODE_34
+
+#if defined(F042)
+/* Address - beginning of the last 1k page (on 32kB MCUs) */
+#define FLASH_ADDR 0x08007C00
+#endif /* F042 */
 
 /*===========================================================================
  * Pin definitions.
@@ -88,7 +101,7 @@ extern volatile uint8_t led_blink;
 #define WIEG1_PINS_MODE PAL_MODE_INPUT
 #define WIEG1_PINS_OUTPUT_MODE PAL_MODE_OUTPUT_OPENDRAIN
 
-#define WIEG_HAS_2 TRUE
+#define WIEG_HAS_2 FALSE
 #define WIEG2_IN_DAT0_GPIO GPIOA
 #define WIEG2_IN_DAT0_PORT PORTA
 #define WIEG2_IN_DAT0_PIN 13

@@ -7,6 +7,7 @@
 #include "hal.h"
 
 #include "usbcfg.h"
+#include "flash.h"
 #include "wiegand.h"
 
 /*===========================================================================
@@ -18,6 +19,8 @@ volatile uint8_t wieg1_reading_sequence = 0;
 uint8_t wieg1_buffer[100];
 volatile uint8_t wieg1_buffer_pos = 0;
 
+volatile uint16_t print_mode;
+
 #if WIEG_HAS_2
 volatile systime_t wieg2_last_pulse_time;
 volatile uint8_t wieg2_reading_sequence = 0;
@@ -25,46 +28,29 @@ uint8_t wieg2_buffer[100];
 volatile uint8_t wieg2_buffer_pos = 0;
 #endif
 
-// void phex4(BaseChannel *chn, uint8_t c) {
-//   chnPutTimeout(chn, c + ((c < 10) ? '0' : 'A' - 10), TIME_IMMEDIATE);
-// }
+/*===========================================================================
+ * Read/write mode in flash.
+ *===========================================================================*/
+uint16_t read_print_mode(void) {
+  uint16_t mode;
+  mode = flash_read16(FLASH_ADDR);
+  if((mode & MODE_SIGNATURE) == MODE_SIGNATURE) {
+    return( mode & 0xFF );
+  } else {
+    return( MODE_DEFAULT );
+  }
 
-// #define phex4(chn, c) chnPutTimeout(chn, c + ((c < 10) ? '0' : 'A' - 10), TIME_IMMEDIATE)
+}
 
-// void phex(BaseChannel *chn, uint8_t c) {
-//   phex4(chn, c >> 4);
-//   phex4(chn, c & 15);
-// }
-
-// #define phex(chn, c) phex4(chn, (c>>4)); phex4(chn, (c&15))
-
-// void phex16(BaseChannel *chn, uint32_t c) {
-//   phex(chn, (uint8_t)(c>>8));
-//   phex(chn, (uint8_t)c);
-// }
-
-// #define phex16(chn, c) phex(chn, (uint8_t)(c>>8)); phex(chn, (uint8_t)c)
-
-// void phex24(BaseChannel *chn, uint32_t c) {
-//   phex16(chn, (uint32_t)((c>>8)&0xFFFF));
-//   phex(chn, (uint8_t)c);
-// }
-
-// #define phex24(chn, c) phex16(chn, (uint32_t)((c>>8)&0xFFFF)); phex(chn, (uint8_t)c)
-
-// void phex32(BaseChannel *chn, uint32_t c) {
-//   phex16(chn, c>>16);
-//   phex16(chn, c&0xFFFF);
-// }
-
-// #define phex32(chn, c) phex16(chn, (c>>16)); phex16(chn, c&0xFFFF)
-
-// void pent(BaseChannel *chn) {
-//   chnPutTimeout(chn, '\r', TIME_IMMEDIATE);
-//   chnPutTimeout(chn, '\n', TIME_IMMEDIATE);
-// }
-
-// #define pent(chn) chnPutTimeout(chn, '\r', TIME_IMMEDIATE); chnPutTimeout(chn, '\n', TIME_IMMEDIATE);
+/* Use sparingly */
+void write_print_mode(uint16_t mode) {
+  osalSysLock();
+  flash_unlock();
+  flash_erasepage(FLASH_ADDR);
+  flash_write16(FLASH_ADDR, (mode&0xFF)|MODE_SIGNATURE );
+  flash_lock();
+  osalSysUnlock();
+}
 
 /*===========================================================================
  * Interrupt callbacks.
@@ -193,6 +179,8 @@ void wieg_process_message(uint8_t* buf, uint8_t n) {
   } else {
     // couldn't decode
     chnWriteTimeout(&OUTPUT_CHANNEL, (const uint8_t *)"err:", 4, TIME_IMMEDIATE);
+    phex(&OUTPUT_CHANNEL,n);
+    chnPutTimeout(&OUTPUT_CHANNEL, ':', TIME_IMMEDIATE);
     uint8_t i;
     for(i=0; i<n; i++) {
       chnPutTimeout(&OUTPUT_CHANNEL, '0'+buf[i], TIME_IMMEDIATE);
@@ -289,6 +277,7 @@ void wieg_init(void) {
   palSetPadMode(WIEG2_IN_DAT0_GPIO, WIEG2_IN_DAT0_PIN, WIEG2_PINS_MODE);
   palSetPadMode(WIEG2_IN_DAT1_GPIO, WIEG2_IN_DAT1_PIN, WIEG2_PINS_MODE);
 #endif /* WIEG_HAS_2 */
+  print_mode = read_print_mode();
 #if (WIEG_SHOULD_RECEIVE)
   chThdCreateStatic(waWieg1Thr, sizeof(waWieg1Thr), NORMALPRIO, Wieg1Thr, NULL);
 #if WIEG_HAS_2

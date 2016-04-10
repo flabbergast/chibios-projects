@@ -163,14 +163,13 @@ int main(void) {
   usbConnectBus(serusbcfg.usbp);
 
   /*
-   * Normal main() thread activity, in this demo it does nothing except
-   * sleeping in a loop and check the button state.
+   * The main loop.
    */
   while(true) {
     if((palReadPad(BUTTON_GPIO, BUTTON_PIN) == BUTTON_ACTIVE) && (OUTPUT_CHANNEL.config->usbp->state == USB_ACTIVE)) {
       /* sdWrite(&OUTPUT_CHANNEL, (uint8_t *)"hello world\r\n", 13); */
       // chprintf((BaseSequentialStream *)&OUTPUT_CHANNEL, "Hello world\r\n");
-      chnPutTimeout(&OUTPUT_CHANNEL, 'W', TIME_IMMEDIATE);          
+      chnPutTimeout(&OUTPUT_CHANNEL, 'W', TIME_IMMEDIATE);
       wieg_send(wieg_test_buf, 26);
       led_blink = 1;
       chThdSleepMilliseconds(200);

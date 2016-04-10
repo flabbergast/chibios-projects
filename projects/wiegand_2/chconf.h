@@ -134,7 +134,7 @@
  * @note    This is not related to the compiler optimization options.
  * @note    The default is @p TRUE.
  */
-#define CH_CFG_OPTIMIZE_SPEED               TRUE
+#define CH_CFG_OPTIMIZE_SPEED               FALSE
 
 /** @} */
 
@@ -328,13 +328,23 @@
 
 #if defined(F042)
 
+// #define CH_DBG_STATISTICS                   FALSE
+// #define CH_DBG_SYSTEM_STATE_CHECK           TRUE
+// #define CH_DBG_ENABLE_CHECKS                TRUE
+// #define CH_DBG_ENABLE_ASSERTS               TRUE
+// #define CH_DBG_TRACE_MASK                   CH_DBG_TRACE_MASK_NONE
+// #define CH_DBG_TRACE_BUFFER_SIZE            128
+// #define CH_DBG_ENABLE_STACK_CHECK           TRUE
+// #define CH_DBG_FILL_THREADS                 FALSE
+// #define CH_DBG_THREADS_PROFILING            FALSE
+
 #define CH_DBG_STATISTICS                   FALSE
 #define CH_DBG_SYSTEM_STATE_CHECK           TRUE
-#define CH_DBG_ENABLE_CHECKS                TRUE
-#define CH_DBG_ENABLE_ASSERTS               TRUE
+#define CH_DBG_ENABLE_CHECKS                FALSE
+#define CH_DBG_ENABLE_ASSERTS               FALSE
 #define CH_DBG_TRACE_MASK                   CH_DBG_TRACE_MASK_NONE
-#define CH_DBG_TRACE_BUFFER_SIZE            128
-#define CH_DBG_ENABLE_STACK_CHECK           TRUE
+#define CH_DBG_TRACE_BUFFER_SIZE            4
+#define CH_DBG_ENABLE_STACK_CHECK           FALSE
 #define CH_DBG_FILL_THREADS                 FALSE
 #define CH_DBG_THREADS_PROFILING            FALSE
 
