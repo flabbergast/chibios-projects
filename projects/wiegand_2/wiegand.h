@@ -14,6 +14,8 @@ void wieg_init(void);
 void wieg_send(uint8_t* buf, uint8_t n);
 bool wieg_is_26(uint8_t *buf, uint8_t n);
 uint32_t wieg_decode_26(uint8_t *buf);
+bool wieg_is_34(uint8_t *buf, uint8_t n);
+uint32_t wieg_decode_34(uint8_t *buf);
 
 uint16_t read_print_mode(void);
 void write_print_mode(uint16_t mode);
@@ -24,12 +26,12 @@ extern volatile uint16_t print_mode;
 
 #define MODE_SIGNATURE 0xBE00
 
-#define MODE_ERR (1<<0)
-#define MODE_26  (1<<1)
-#define MODE_34  (1<<2)
+#define MODE_DEBUG (1<<0)
+#define MODE_ERR (1<<1)
+#define MODE_26  (1<<2)
+#define MODE_34  (1<<3)
 
-#define MODE_DEBUG   MODE_ERR|MODE_26|MODE_34
-#define MODE_DEFAULT MODE_26|MODE_34
+#define MODE_DEFAULT MODE_DEBUG
 
 #if defined(F042)
 /* Address - beginning of the last 1k page (on 32kB MCUs) */
@@ -101,7 +103,7 @@ extern volatile uint16_t print_mode;
 #define WIEG1_PINS_MODE PAL_MODE_INPUT
 #define WIEG1_PINS_OUTPUT_MODE PAL_MODE_OUTPUT_OPENDRAIN
 
-#define WIEG_HAS_2 FALSE
+#define WIEG_HAS_2 TRUE
 #define WIEG2_IN_DAT0_GPIO GPIOA
 #define WIEG2_IN_DAT0_PORT PORTA
 #define WIEG2_IN_DAT0_PIN 13
@@ -129,6 +131,8 @@ extern volatile uint16_t print_mode;
 #define WIEG_PAUSE_WIDTH_MAX (MS2ST(20))
 #define WIEG_SAMPLE_WAIT     (US2ST(5))
 
+#define WIEG_BUFFER_SIZE     100
+
 /*===========================================================================
  * Output definitions.
  *===========================================================================*/
@@ -137,7 +141,7 @@ extern volatile uint16_t print_mode;
 #define phex(chn, c) phex4(chn, (c>>4)); phex4(chn, (c&15))
 #define phex16(chn, c) phex(chn, (uint8_t)(c>>8)); phex(chn, (uint8_t)c)
 #define phex24(chn, c) phex16(chn, (uint32_t)((c>>8)&0xFFFF)); phex(chn, (uint8_t)c)
-#define phex32(chn, c) phex16(chn, (c>>16)); phex16(chn, c&0xFFFF)
+#define phex32(chn, c) phex16(chn, (c>>16)); phex16(chn, (c&0xFFFF))
 #define pent(chn) chnWriteTimeout(chn, (const uint8_t *)"\r\n", 2, TIME_IMMEDIATE);
 
 #endif /* WIEGAND_H */

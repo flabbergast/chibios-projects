@@ -29,6 +29,8 @@
 #define INCLUDED_FROM_USBCFG_C
 #include "usbcfg.h"
 
+#include "version.h"
+
 /*
  * Endpoints to be used for USBD1.
  */
@@ -188,7 +190,7 @@ static const uint8_t vcom_string2[] = {
   USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
   'W', 0, 'i', 0, 'e', 0, 'g', 0, 'a', 0,
   'n', 0, 'd', 0, ' ', 0, 'r', 0, '0', 0,
-  '.', 0, '1', 0
+  '.', 0, FW_REV, 0
 };
 
 /*

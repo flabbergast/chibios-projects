@@ -466,6 +466,10 @@
 /**
  * @brief   Threads finalization hook.
  * @details User finalization code added to the @p chThdExit() API.
+ *
+ * @note    It is inserted into lock zone.
+ * @note    It is also invoked when the threads simply return in order to
+ *          terminate.
  */
 #define CH_CFG_THREAD_EXIT_HOOK(tp) {                                       \
   /* Add threads finalization code here.*/                                  \

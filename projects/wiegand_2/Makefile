@@ -138,8 +138,10 @@ MCU_STARTUP = stm32f0xx
 ARMV = 6
 MCU  = cortex-m0
 MCU_LDSCRIPT = STM32F042x6
-BOARD = STM32F042_BREAKOUT
+BOARD = F042_WIEG
 endif
+
+TARGET_DIR = .
 
 # Set ROOTDIR and CHIBIOS* variables
 ROOTDIR = ../..
@@ -158,8 +160,8 @@ ifeq ($(MCU_FAMILY),KINETIS)
 else
 	include $(CHIBIOS)/os/hal/ports/$(MCU_FAMILY)/$(MCU_SERIES)/platform.mk
 endif
-ifneq ("$(wildcard $(ROOTDIR)/boards/$(BOARD))","")
-	include $(ROOTDIR)/boards/$(BOARD)/board.mk
+ifneq ("$(wildcard $(TARGET_DIR)/boards/$(BOARD))","")
+	include $(TARGET_DIR)/boards/$(BOARD)/board.mk
 else
 	ifeq ($(MCU_FAMILY),KINETIS)
 		include $(CHIBIOS_CONTRIB)/os/hal/boards/$(BOARD)/board.mk
@@ -172,6 +174,8 @@ include $(CHIBIOS)/os/hal/osal/rt/osal.mk
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v$(ARMV)m.mk
 # Other files (optional).
+include $(CHIBIOS)/os/hal/lib/streams/streams.mk
+include $(CHIBIOS)/os/various/shell/shell.mk
 
 # Define linker script file here
 ifneq ("$(wildcard $(ROOTDIR)/ld/$(MCU_LDSCRIPT).ld)","")
@@ -189,11 +193,12 @@ CSRC = $(STARTUPSRC) \
        $(HALSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
+       $(STREAMSSRC) \
+       $(SHELLSRC) \
        main.c \
        usbcfg.c \
        flash.c \
-       wiegand.c \
-       $(CHIBIOS)/os/hal/lib/streams/chprintf.c
+       wiegand.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -224,7 +229,7 @@ ASMSRC = $(STARTUPASM) $(PORTASM) $(OSALASM)
 
 INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
-         $(CHIBIOS)/os/various $(CHIBIOS)/os/hal/lib/streams
+         $(STREAMSINC) $(SHELLINC)
 
 #
 # Project, sources and paths
@@ -273,10 +278,7 @@ CPPWARN = -Wall -Wextra -Wundef
 #
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS = 
-
-
-
+UDEFS =
 
 ifeq ($(TARGET),TEENSY30)
 UDEFS += -DTEENSY30
