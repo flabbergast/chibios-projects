@@ -18,10 +18,6 @@
 #define _BOARD_H_
 
 /*
- * Setup for the PJRC Teensy LC board.
- */
-
-/*
  * Board identifier.
  */
 #define BOARD_KL27Z_BREAKOUT
