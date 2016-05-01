@@ -7,7 +7,7 @@
 
 #include "eep24lc.h"
 
-#if defined(KL27Z) || defined(KL25Z) || defined(TEENSY30) || defined(TEENSY32) || defined(WF) || defined(MCHCK)
+#if defined(KL27Z) || defined(KL25Z) || defined(TEENSY30) || defined(TEENSY32) || defined(TEENSYLC) || defined(WF) || defined(MCHCK)
 static const I2CConfig i2ccfg = {
   100000 // clock
 };

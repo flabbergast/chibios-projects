@@ -170,6 +170,66 @@
 
 #endif /* KL27Z */
 
+#if defined(TEENSYLC)
+
+#define KL2x_MCUCONF
+
+/*
+ * HAL driver system settings.
+ */
+#if 1
+/* PEE mode - 48MHz system clock driven by (8 MHz) external crystal. */
+#define KINETIS_MCG_MODE            KINETIS_MCG_MODE_PEE
+#define KINETIS_PLLCLK_FREQUENCY    96000000UL
+#define KINETIS_SYSCLK_FREQUENCY    48000000UL
+#endif
+
+#if 0
+/* crystal-less FEI mode - 48 MHz with internal 32.768 kHz crystal */
+#define KINETIS_MCG_MODE            KINETIS_MCG_MODE_FEI
+#define KINETIS_MCG_FLL_DMX32       1           /* Fine-tune for 32.768 kHz */
+#define KINETIS_MCG_FLL_DRS         1           /* 1464x FLL factor */
+#define KINETIS_SYSCLK_FREQUENCY    47972352UL  /* 32.768 kHz * 1464 (~48 MHz) */
+#define KINETIS_CLKDIV1_OUTDIV1     1           /* do not divide system clock */
+#endif
+
+/*
+ * SERIAL driver system settings.
+ */
+#define KINETIS_SERIAL_USE_UART0              TRUE
+
+/*
+ * I2C driver settings
+ */
+#define KINETIS_I2C_USE_I2C0                  TRUE
+#define KINETIS_I2C_I2C0_PRIORITY             2
+
+/*
+ * USB driver settings
+ */
+#define KINETIS_USB_USE_USB0                  TRUE
+/* need to redefine this, since the default is for K20x */
+#define KINETIS_USB_USB0_IRQ_PRIORITY         2
+
+/*
+ * EXTI driver system settings.
+ */
+#define KINETIS_EXTI_NUM_CHANNELS               1
+#define KINETIS_EXT_PORTA_IRQ_PRIORITY          3
+#define KINETIS_EXT_PORTB_IRQ_PRIORITY          3
+#define KINETIS_EXT_PORTC_IRQ_PRIORITY          3
+#define KINETIS_EXT_PORTD_IRQ_PRIORITY          3
+#define KINETIS_EXT_PORTE_IRQ_PRIORITY          3
+
+/* KL26 48pin  */
+#define KINETIS_EXT_PORTA_WIDTH                 21
+#define KINETIS_EXT_PORTB_WIDTH                 18
+#define KINETIS_EXT_PORTC_WIDTH                 8
+#define KINETIS_EXT_PORTD_WIDTH                 8
+#define KINETIS_EXT_PORTE_WIDTH                 31
+
+#endif /* TEENSYLC */
+
 
 #if defined(KL25Z)
 
@@ -240,27 +300,25 @@
 #define KINETIS_EXT_PORTA_WIDTH                 21
 #define KINETIS_EXT_PORTD_WIDTH                 8
 
+#endif /* KL25Z */
+
+/* fill in Kinetis port widths if not set */
 #ifndef KINETIS_EXT_PORTA_WIDTH
 #define KINETIS_EXT_PORTA_WIDTH                 0
 #endif
-
 #ifndef KINETIS_EXT_PORTB_WIDTH
 #define KINETIS_EXT_PORTB_WIDTH                 0
 #endif
-
 #ifndef KINETIS_EXT_PORTC_WIDTH
 #define KINETIS_EXT_PORTC_WIDTH                 0
 #endif
-
 #ifndef KINETIS_EXT_PORTD_WIDTH
 #define KINETIS_EXT_PORTD_WIDTH                 0
 #endif
-
 #ifndef KINETIS_EXT_PORTE_WIDTH
 #define KINETIS_EXT_PORTE_WIDTH                 0
 #endif
 
-#endif /* KL25Z */
 
 
 #if defined(F042)

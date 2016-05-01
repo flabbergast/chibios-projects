@@ -22,7 +22,7 @@
 /* Target-specific defs.                                                     */
 /*===========================================================================*/
 
-#if defined(TEENSY30) || defined(TEENSY32)
+#if defined(TEENSY30) || defined(TEENSY32) || defined(TEENSYLC)
 /* Teensy 3.0 and 3.2 */
 #define BUTTON_GPIO TEENSY_PIN2_IOPORT
 #define BUTTON_PIN TEENSY_PIN2
@@ -229,6 +229,12 @@ int main(void) {
   uint8_t txbuf[10] = { 0, 0, 3,4,5,6,7,8,9,10 };
   uint8_t rxbuf[10] = {0};
 
+#if defined(PROJECT_USE_SERIAL)
+#define OUT SERIAL_DRIVER
+#else
+#define OUT OUTPUT_CHANNEL
+#endif
+
   /*
    * Normal main() thread activity.
    */
@@ -239,17 +245,17 @@ int main(void) {
       // chprintf((BaseSequentialStream *)&OUTPUT_CHANNEL, "Hello world\r\n");
       // chnPutTimeout(&OUTPUT_CHANNEL, 'W', TIME_IMMEDIATE);          
       led_blink = 1;
-      chnPutTimeout(&SERIAL_DRIVER, 't', TIME_IMMEDIATE);
+      chnPutTimeout(&OUT, 't', TIME_IMMEDIATE);
       msg = i2cMasterTransmit(&I2C_DRIVER, EEP24LC_ADDR, txbuf, 2, rxbuf, 10);
       // msg = i2cMasterTransmit(&I2C_DRIVER, EEP24LC_ADDR, txbuf, 2, NULL, 0);
-      chprintf((BaseSequentialStream *)&SERIAL_DRIVER, "%d\r\n",msg);
+      chprintf((BaseSequentialStream *)&OUT, "%d\r\n",msg);
       // chThdSleepMilliseconds(1);
       // msg = i2cMasterReceiveTimeout(&I2C_DRIVER, EEP24LC_ADDR, rxbuf, 10, TIME_INFINITE);
       // chprintf((BaseSequentialStream *)&SERIAL_DRIVER, "%d\r\n",msg);
       for(t=0; t<10; t++) {
-        phex(&SERIAL_DRIVER,rxbuf[t]);
+        phex(&OUT,rxbuf[t]);
       }
-      pent(&SERIAL_DRIVER);
+      pent(&OUT);
       i2cMasterTransmit(&I2C_DRIVER, EEP24LC_ADDR, txbuf, 10, NULL, 0);
       // chnPutTimeout(&OUTPUT_CHANNEL, 't', TIME_IMMEDIATE);
       // msg = eep24lc_write_byte(1,8);

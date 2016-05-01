@@ -48,7 +48,7 @@
  * @details Frequency of the system timer that drives the system ticks. This
  *          setting also defines the system tick time unit.
  */
-#if defined(TEENSY30) || defined(TEENSY32) || defined(WF) || defined(MCHCK) || defined(KL27Z) || defined(KL25Z)
+#if defined(TEENSY30) || defined(TEENSY32) || defined(TEENSYLC) || defined(WF) || defined(MCHCK) || defined(KL27Z) || defined(KL25Z)
 #define CH_CFG_ST_FREQUENCY                 1000
 #elif defined(F042)
 #define CH_CFG_ST_FREQUENCY                 10000
@@ -62,7 +62,7 @@
  *          The value one is not valid, timeouts are rounded up to
  *          this value.
  */
-#if defined(TEENSY30) || defined(TEENSY32) || defined(WF) || defined(MCHCK) || defined(KL27Z) || defined(KL25Z)
+#if defined(TEENSY30) || defined(TEENSY32) || defined(TEENSYLC) || defined(WF) || defined(MCHCK) || defined(KL27Z) || defined(KL25Z)
 #define CH_CFG_ST_TIMEDELTA                 0
 #elif defined(F042)
 #define CH_CFG_ST_TIMEDELTA                 2
@@ -89,7 +89,7 @@
  * @note    The round robin preemption is not supported in tickless mode and
  *          must be set to zero in that case.
  */
-#if defined(TEENSY30) || defined(TEENSY32) || defined(WF) || defined(MCHCK) || defined(KL27Z) || defined(KL25Z)
+#if defined(TEENSY30) || defined(TEENSY32) || defined(TEENSYLC) || defined(WF) || defined(MCHCK) || defined(KL27Z) || defined(KL25Z)
 #define CH_CFG_TIME_QUANTUM                 20
 #elif defined(F042)
 #define CH_CFG_TIME_QUANTUM                 0

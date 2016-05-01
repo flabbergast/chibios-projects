@@ -51,13 +51,13 @@ static const uint8_t vcom_device_descriptor_data[18] = {
                   0x00,                 /* bDeviceProtocol.                 */
                   0x40,                 /* bMaxPacketSize.                  */
                   0x0179,               /* idVendor.                        */
-#if defined(TEENSY30) || defined(TEENSY32)
+#if defined(TEENSY30) || defined(TEENSY32) || defined(TEENSYLC)
                   0x0002,               /* idProduct.                       */
 #elif defined(MCHCK)
                   0x0003,               /* idProduct.                       */
 #elif defined(F042)
                   0x0004,               /* idProduct.                       */
-#elif defined(KL27Z)
+#elif defined(KL27Z) || defined(KL25Z)
                   0x0005,               /* idProduct.                       */
 #else
                   0x0001,               /* idProduct.                       */

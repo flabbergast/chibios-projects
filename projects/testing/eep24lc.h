@@ -10,8 +10,8 @@
 
 #define EEP24LC_ADDR 0x50
 
-#if defined(TEENSY30) || defined(TEENSY32)
-/* Teensy 3.0 and 3.2 */
+#if defined(TEENSY30) || defined(TEENSY32) || defined(TEENSYLC)
+/* Teensy 3.0 and 3.2 and LC */
 // PTB2/I2C0_SCL
 #define I2C_SCL_GPIO TEENSY_PIN19_IOPORT
 #define I2C_SCL_PIN  TEENSY_PIN19
