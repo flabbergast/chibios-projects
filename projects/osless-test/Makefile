@@ -5,12 +5,12 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -O2 -ggdb -fomit-frame-pointer -falign-functions=16
+  USE_OPT = -O0 -ggdb -fomit-frame-pointer -falign-functions=16
 endif
 
 # C specific options here (added to USE_OPT).
 ifeq ($(USE_COPT),)
-  USE_COPT = 
+  USE_COPT =
 endif
 
 # C++ specific options here (added to USE_OPT).
@@ -25,12 +25,12 @@ endif
 
 # Linker extra options here.
 ifeq ($(USE_LDOPT),)
-  USE_LDOPT = 
+  USE_LDOPT =
 endif
 
 # Enable this if you want link time optimizations (LTO)
 ifeq ($(USE_LTO),)
-  USE_LTO = yes
+  USE_LTO = no
 endif
 
 # If enabled, this option allows to compile the application in THUMB mode.
@@ -69,7 +69,7 @@ ifeq ($(USE_EXCEPTIONS_STACKSIZE),)
   USE_EXCEPTIONS_STACKSIZE = 0x400
 endif
 
-# Enables the use of FPU (no, softfp, hard).
+# Enables the use of FPU on Cortex-M4 (no, softfp, hard).
 ifeq ($(USE_FPU),)
   USE_FPU = no
 endif
@@ -85,25 +85,134 @@ endif
 # Define project name here
 PROJECT = ch
 
+# TARGET = TEENSY30
+# TARGET = TEENSY32
+TARGET = TEENSYLC
+# TARGET = WF
+# TARGET = MCHCK
+# TARGET = KL27Z
+# TARGET = KL25Z
+# TARGET = F042
+
+ifeq ($(TARGET),TEENSY30)
+MCU_FAMILY = KINETIS
+MCU_SERIES = K20x
+MCU_STARTUP = k20x5
+ARMV = 7
+MCU  = cortex-m4
+MCU_LDSCRIPT = MK20DX128
+BOARD = PJRC_TEENSY_3
+endif
+
+ifeq ($(TARGET),TEENSY32)
+MCU_FAMILY = KINETIS
+MCU_SERIES = K20x
+MCU_STARTUP = k20x7
+ARMV = 7
+MCU  = cortex-m4
+MCU_LDSCRIPT = MK20DX256
+BOARD = PJRC_TEENSY_3_1
+endif
+
+ifeq ($(TARGET),WF)
+MCU_FAMILY = KINETIS
+MCU_SERIES = K20x
+MCU_STARTUP = k20x7
+ARMV = 7
+MCU  = cortex-m4
+MCU_LDSCRIPT = MK20DX256BLDR8
+BOARD = PJRC_TEENSY_3_1
+endif
+
+ifeq ($(TARGET),MCHCK)
+MCU_FAMILY = KINETIS
+MCU_SERIES = K20x
+MCU_STARTUP = k20x5
+ARMV = 7
+MCU  = cortex-m4
+MCU_LDSCRIPT = MK20DX128BLDR4
+BOARD = MCHCK_K20
+endif
+
+ifeq ($(TARGET),KL27Z)
+MCU_FAMILY = KINETIS
+MCU_SERIES = KL2x
+MCU_STARTUP = kl2x
+ARMV = 6
+MCU  = cortex-m0plus
+MCU_LDSCRIPT = MKL27Z256
+BOARD = KL27Z_BREAKOUT
+endif
+
+ifeq ($(TARGET),TEENSYLC)
+MCU_FAMILY = KINETIS
+MCU_SERIES = KL2x
+MCU_STARTUP = kl2x
+ARMV = 6
+MCU  = cortex-m0plus
+MCU_LDSCRIPT = MKL26Z64
+BOARD = PJRC_TEENSY_LC
+endif
+
+ifeq ($(TARGET),KL25Z)
+MCU_FAMILY = KINETIS
+MCU_SERIES = KL2x
+MCU_STARTUP = kl2x
+ARMV = 6
+MCU  = cortex-m0plus
+MCU_LDSCRIPT = MKL2xZ128
+BOARD = FREESCALE_FREEDOM_KL25Z
+endif
+
+ifeq ($(TARGET),F042)
+MCU_FAMILY = STM32
+MCU_SERIES = STM32F0xx
+MCU_STARTUP = stm32f0xx
+ARMV = 6
+MCU  = cortex-m0
+MCU_LDSCRIPT = STM32F042x4
+BOARD = STM32F042_BREAKOUT
+endif
+
 # Set ROOTDIR and CHIBIOS* variables
 ROOTDIR = ../..
 include $(ROOTDIR)/chibios-dirs.mk
+
 # Startup files.
-include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_stm32l4xx.mk
+ifeq ($(MCU_FAMILY),KINETIS)
+	include $(CHIBIOS_CONTRIB)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_$(MCU_STARTUP).mk
+else
+	include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_$(MCU_STARTUP).mk
+endif
 # HAL-OSAL files (optional).
 include $(CHIBIOS)/os/hal/hal.mk
-include $(CHIBIOS)/os/hal/ports/STM32/STM32L4xx/platform.mk
-include $(CHIBIOS_CONTRIB)/os/hal/boards/DRAGONFLY/board.mk
-include $(CHIBIOS)/os/hal/osal/rt/osal.mk
+ifeq ($(MCU_FAMILY),KINETIS)
+	include $(CHIBIOS_CONTRIB)/os/hal/ports/$(MCU_FAMILY)/$(MCU_SERIES)/platform.mk
+else
+	include $(CHIBIOS)/os/hal/ports/$(MCU_FAMILY)/$(MCU_SERIES)/platform.mk
+endif
+ifneq ("$(wildcard $(ROOTDIR)/boards/$(BOARD))","")
+	include $(ROOTDIR)/boards/$(BOARD)/board.mk
+else
+	ifeq ($(MCU_FAMILY),KINETIS)
+		include $(CHIBIOS_CONTRIB)/os/hal/boards/$(BOARD)/board.mk
+	else
+		include $(CHIBIOS)/os/hal/boards/$(BOARD)/board.mk
+	endif
+endif
+include $(CHIBIOS)/os/hal/osal/os-less/ARMCMx/osal.mk
 # RTOS files (optional).
-include $(CHIBIOS)/os/rt/rt.mk
-include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
+#include $(CHIBIOS)/os/rt/rt.mk
+#include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v$(ARMV)m.mk
 # Other files (optional).
-include $(CHIBIOS)/test/rt/test.mk
+include $(CHIBIOS)/os/hal/lib/streams/streams.mk
 
 # Define linker script file here
-# LDSCRIPT= $(STARTUPLD)/STM32L476xG.ld
-LDSCRIPT= ./STM32L476xE.ld
+ifneq ("$(wildcard $(ROOTDIR)/ld/$(MCU_LDSCRIPT).ld)","")
+LDSCRIPT = $(ROOTDIR)/ld/$(MCU_LDSCRIPT).ld
+else
+LDSCRIPT = $(STARTUPLD)/$(MCU_LDSCRIPT).ld
+endif
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -114,8 +223,13 @@ CSRC = $(STARTUPSRC) \
        $(HALSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
-       $(TESTSRC) \
+       $(STREAMSSRC) \
+       usbcfg.c \
+       serial.c \
+       eep24lc.c \
        main.c
+
+       # hardfault.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -148,7 +262,7 @@ ASMXSRC = $(STARTUPASM) $(PORTASM) $(OSALASM)
 INCDIR = $(CHIBIOS)/os/license \
          $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
-         $(CHIBIOS)/os/various
+         $(STREAMSINC)
 
 #
 # Project, sources and paths
@@ -157,8 +271,6 @@ INCDIR = $(CHIBIOS)/os/license \
 ##############################################################################
 # Compiler settings
 #
-
-MCU  = cortex-m4
 
 #TRGT = arm-elf-
 TRGT = arm-none-eabi-
@@ -200,6 +312,38 @@ CPPWARN = -Wall -Wextra -Wundef
 # List all user C define here, like -D_DEBUG=1
 UDEFS =
 
+ifeq ($(TARGET),TEENSY30)
+UDEFS += -DTEENSY30
+endif
+
+ifeq ($(TARGET),TEENSY32)
+UDEFS += -DTEENSY32
+endif
+
+ifeq ($(TARGET),TEENSYLC)
+UDEFS += -DTEENSYLC
+endif
+
+ifeq ($(TARGET),WF)
+UDEFS += -DWF -DCORTEX_VTOR_INIT=0x00002000
+endif
+
+ifeq ($(TARGET),MCHCK)
+UDEFS += -DCORTEX_VTOR_INIT=0x00001000 -DMCHCK
+endif
+
+ifeq ($(TARGET),KL27Z)
+UDEFS += -DKL27Z -DPROJECT_USE_SERIAL
+endif
+
+ifeq ($(TARGET),KL25Z)
+UDEFS += -DKL25Z -DPROJECT_USE_SERIAL
+endif
+
+ifeq ($(TARGET),F042)
+UDEFS += -DF042
+endif
+
 # Define ASM defines here
 UADEFS =
 
@@ -218,3 +362,6 @@ ULIBS =
 
 RULESPATH = $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC
 include $(RULESPATH)/rules.mk
+
+include $(ROOTDIR)/common.mk
+

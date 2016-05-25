@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ch.h"
 #include "hal.h"
 
 #include "chprintf.h"
@@ -105,6 +104,7 @@
  * Generic code.
  *===========================================================================*/
 
+#if 0
 /*
  * LED blinker thread, times are in milliseconds.
  */
@@ -131,6 +131,7 @@ static THD_FUNCTION(BlinkThr, arg) {
     chThdSleepMilliseconds(10);
   }
 }
+#endif
 
 static inline void delayMicroseconds(uint32_t) __attribute__((always_inline, unused));
 static inline void delayMicroseconds(uint32_t usec)
@@ -162,8 +163,6 @@ int main(void) {
    * System initializations.
    * - HAL initialization, this also initializes the configured device drivers
    *   and performs the board-specific initializations.
-   * - Kernel initialization, the main() function becomes a thread and the
-   *   RTOS is active.
    */
   halInit();
 
@@ -175,7 +174,10 @@ int main(void) {
   SYSCFG->CFGR1 |= SYSCFG_CFGR1_PA11_PA12_RMP;
 #endif /* F042 */
 
-  chSysInit();
+  /*
+   * Enabling interrupts, initialization done.
+   */
+  osalSysEnable();
 
 #if defined(KL25Z)
   /* Turn off RGB LED */
@@ -195,7 +197,7 @@ int main(void) {
   /*
    * Creates the blinker thread.
    */
-  chThdCreateStatic(waBlinkThr, sizeof(waBlinkThr), NORMALPRIO, BlinkThr, NULL);
+  // chThdCreateStatic(waBlinkThr, sizeof(waBlinkThr), NORMALPRIO, BlinkThr, NULL);
 
   /*
    * Init I2C
@@ -219,7 +221,7 @@ int main(void) {
    * after a reset.
    */
   usbDisconnectBus(serusbcfg.usbp);
-  chThdSleepMilliseconds(1000);
+  osalThreadSleepMilliseconds(1000);
   usbStart(serusbcfg.usbp, &usbcfg);
   usbConnectBus(serusbcfg.usbp);
 
@@ -245,7 +247,7 @@ int main(void) {
       /* sdWrite(&OUTPUT_CHANNEL, (uint8_t *)"hello world\r\n", 13); */
       // chprintf((BaseSequentialStream *)&OUTPUT_CHANNEL, "Hello world\r\n");
       // chnPutTimeout(&OUTPUT_CHANNEL, 'W', TIME_IMMEDIATE);          
-      led_blink = 1;
+      // led_blink = 1;
       chnPutTimeout(&OUT, 't', TIME_IMMEDIATE);
       msg = i2cMasterTransmit(&I2C_DRIVER, EEP24LC_ADDR, txbuf, 2, rxbuf, 10);
       // msg = i2cMasterTransmit(&I2C_DRIVER, EEP24LC_ADDR, txbuf, 2, NULL, 0);
@@ -262,7 +264,7 @@ int main(void) {
       // msg = eep24lc_write_byte(1,8);
       // chprintf((BaseSequentialStream *)&SERIAL_DRIVER, "%d\r\n",msg);
       // chprintf((BaseSequentialStream *)&OUTPUT_CHANNEL, "%d\r\n",msg);
-      chThdSleepMilliseconds(1000);
+      osalThreadSleepMilliseconds(1000);
       // eep24lc_read_byte(1,&t);
       // eep24lc_cur_addr_read_byte(&t);
       // phex(&SERIAL_DRIVER,t);
@@ -296,7 +298,7 @@ int main(void) {
       }
     }
 
-    chThdSleepMilliseconds(50);
+    osalThreadSleepMilliseconds(50);
   }
 #endif
 #if 0

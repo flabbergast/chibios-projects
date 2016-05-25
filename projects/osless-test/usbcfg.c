@@ -196,9 +196,9 @@ static const uint8_t vcom_string2[] = {
 static const uint8_t vcom_string3[] = {
   USB_DESC_BYTE(8),                     /* bLength.                         */
   USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  '0' + CH_KERNEL_MAJOR, 0,
-  '0' + CH_KERNEL_MINOR, 0,
-  '0' + CH_KERNEL_PATCH, 0
+  '0' + CH_HAL_MAJOR, 0,
+  '0' + CH_HAL_MINOR, 0,
+  '0' + CH_HAL_PATCH, 0
 };
 
 /*
